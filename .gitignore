@@ -1,0 +1,28 @@
+# Build output
+x64/
+x86/
+Debug/
+Release/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.aps
+*.ncb
+*.sdf
+*.opensdf
+ipch/
+
+# Compiler/linker artifacts
+*.obj
+*.pch
+*.pdb
+*.ilk
+*.exp
+*.idb
+
+# Executables and intermediate DLLs in output dirs
+# (keep the bundled SDL2*.dll at the project root — they're dependencies)
+x64/**/*.dll
+x64/**/*.exe
