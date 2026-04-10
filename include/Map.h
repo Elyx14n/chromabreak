@@ -6,7 +6,7 @@
 
 struct Map {
   BrickColor cells[ROWS][COLS];
-  BrickType  types[ROWS][COLS];
+  BrickType types[ROWS][COLS];
   float spawnTimer;
   float totalTime;
   float reverserTimer; // > 0 while reverse-shift mode is active
@@ -19,9 +19,11 @@ struct Map {
                  ParticleSystem &ps);
 
   // Special-brick effects — called from Ball after physics separation.
-  void bombEffect       (int r, int c, BrickColor color, int &score, ParticleSystem &ps);
-  void transformerEffect(int r, int c, BrickColor color, int &score, ParticleSystem &ps);
-  void reverserEffect   (int r, int c,                   int &score, ParticleSystem &ps);
+  void bombEffect(int r, int c, BrickColor color, int &score,
+                  ParticleSystem &ps);
+  void transformerEffect(int r, int c, BrickColor color, int &score,
+                         ParticleSystem &ps);
+  void reverserEffect(int r, int c, int &score, ParticleSystem &ps);
 
   float currentSpawnRate() const;
 
@@ -31,4 +33,5 @@ struct Map {
 
 private:
   void spawnRow(BrickColor *out, BrickType *outTypes) const;
+  BrickType spawnBrickType(BrickColor bc) const;
 };

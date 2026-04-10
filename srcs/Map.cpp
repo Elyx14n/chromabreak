@@ -8,8 +8,8 @@
 void Map::init() {
   memset(cells, 0, sizeof(cells)); // BrickColor::EMPTY == 0
   memset(types, 0, sizeof(types)); // BrickType::NORMAL == 0
-  spawnTimer    = 0.f;
-  totalTime     = 0.f;
+  spawnTimer = 0.f;
+  totalTime = 0.f;
   reverserTimer = 0.f;
   srand((unsigned)time(nullptr));
   BrickType firstTypes[COLS];
@@ -41,7 +41,7 @@ void Map::floodFill(int startR, int startC, BrickColor color, int &score,
   }
   cells[startR][startC] = BrickColor::EMPTY;
   types[startR][startC] = BrickType::NORMAL;
-  score += 10;
+  score += BASE_SCORE;
   stack[top++] = {(int8_t)startR, (int8_t)startC};
 
   static const int8_t dr[] = {-1, 1, 0, 0};
@@ -63,7 +63,7 @@ void Map::floodFill(int startR, int startC, BrickColor color, int &score,
                     BrickPal::Colors[static_cast<int>(color)], 8);
       cells[nr][nc] = BrickColor::EMPTY;
       types[nr][nc] = BrickType::NORMAL;
-      score += 10;
+      score += BASE_SCORE;
       stack[top++] = {(int8_t)nr, (int8_t)nc};
     }
   }
@@ -78,7 +78,7 @@ void Map::bombEffect(int r, int c, BrickColor color, int &score,
   }
   cells[r][c] = BrickColor::EMPTY;
   types[r][c] = BrickType::NORMAL;
-  score += 10;
+  score += BASE_SCORE;
 
   // Destroy all remaining normal bricks of the same color
   for (int row = 0; row < ROWS; row++) {
@@ -89,7 +89,7 @@ void Map::bombEffect(int r, int c, BrickColor color, int &score,
                       8);
         cells[row][col] = BrickColor::EMPTY;
         types[row][col] = BrickType::NORMAL;
-        score += 10;
+        score += BASE_SCORE;
       }
     }
   }
@@ -104,7 +104,7 @@ void Map::transformerEffect(int r, int c, BrickColor color, int &score,
   }
   cells[r][c] = BrickColor::EMPTY;
   types[r][c] = BrickType::NORMAL;
-  score += 10;
+  score += BASE_SCORE;
 
   // Recolor all non-empty bricks within TRANSFORMER_RADIUS (Chebyshev)
   int rMin = std::max(0, r - TRANSFORMER_RADIUS);
@@ -113,8 +113,9 @@ void Map::transformerEffect(int r, int c, BrickColor color, int &score,
   int cMax = std::min(COLS - 1, c + TRANSFORMER_RADIUS);
 
   for (int row = rMin; row <= rMax; row++) {
-	for (int col = cMin; col <= cMax; col++) {
-      if (cells[row][col] != BrickColor::EMPTY && types[row][col] == BrickType::NORMAL) {
+    for (int col = cMin; col <= cMax; col++) {
+      if (cells[row][col] != BrickColor::EMPTY &&
+          types[row][col] == BrickType::NORMAL) {
         cells[row][col] = color;
         types[row][col] = BrickType::NORMAL; // reset any special status
       }
@@ -127,10 +128,39 @@ void Map::reverserEffect(int r, int c, int &score, ParticleSystem &ps) {
   SDL_Rect cell = cellRect(r, c);
   ps.spawnBurst(cell.x + cell.w * 0.5f, cell.y + cell.h * 0.5f,
                 SpecialPal::Reverser, 28);
-  cells[r][c]    = BrickColor::EMPTY;
-  types[r][c]    = BrickType::NORMAL;
-  score         += 10;
-  reverserTimer  = POWER_DURATION;
+  cells[r][c] = BrickColor::EMPTY;
+  types[r][c] = BrickType::NORMAL;
+  score += BASE_SCORE;
+  reverserTimer = POWER_DURATION;
+}
+
+BrickType Map::spawnBrickType(BrickColor bc) const {
+  if (rand() % 100 < SPECIAL_BRICK_CHANCE) {
+    BrickType bt = static_cast<BrickType>(1 + rand() % 4);
+    if (bt == BrickType::BOMB || bt == BrickType::TRANSFORMER) {
+      auto hasExistingColorAndType = [this, bc, bt]() -> bool {
+        for (int r = 0; r < ROWS; r++) {
+          for (int c = 0; c < COLS; c++) {
+            if (cells[r][c] == bc && types[r][c] == bt)
+              return true;
+          }
+        }
+        return false;
+      };
+
+      if (hasExistingColorAndType()) {
+        int reroll = rand() % 3;
+        if (reroll == 0)
+          return BrickType::REVERSER;
+        if (reroll == 1)
+          return BrickType::RAINBOW;
+        return BrickType::NORMAL;
+      }
+    }
+    return bt;
+  } else {
+    return BrickType::NORMAL;
+  }
 }
 
 void Map::spawnRow(BrickColor *out, BrickType *outTypes) const {
@@ -154,10 +184,24 @@ void Map::spawnRow(BrickColor *out, BrickType *outTypes) const {
 
     for (int i = 0; i < runLen; i++) {
       out[col + i] = color;
-      // Assign a random special type at SPECIAL_BRICK_CHANCE % per brick
-      outTypes[col + i] = (rand() % 100 < SPECIAL_BRICK_CHANCE)
-                              ? static_cast<BrickType>(1 + rand() % 4)
-                              : BrickType::NORMAL;
+      BrickType bt = spawnBrickType(color);
+
+      // Enforce no adjacent special bricks (8 directions).
+      if (bt != BrickType::NORMAL) {
+        int pos = col + i;
+        bool adjacent = false;
+        if (pos > 0 && outTypes[pos - 1] != BrickType::NORMAL)
+          adjacent = true;
+        for (int dc = -1; dc <= 1 && !adjacent; dc++) {
+          int nc = pos + dc;
+          if (nc >= 0 && nc < COLS && types[0][nc] != BrickType::NORMAL)
+            adjacent = true;
+        }
+        if (adjacent)
+          bt = BrickType::NORMAL;
+      }
+
+      outTypes[col + i] = bt;
     }
 
     col += runLen;
@@ -165,7 +209,7 @@ void Map::spawnRow(BrickColor *out, BrickType *outTypes) const {
 }
 
 void Map::update(float dt, bool &gameOver, int &score, ParticleSystem &ps) {
-  totalTime  += dt;
+  totalTime += dt;
   spawnTimer += dt;
 
   if (reverserTimer > 0.f)
@@ -176,40 +220,29 @@ void Map::update(float dt, bool &gameOver, int &score, ParticleSystem &ps) {
   spawnTimer = 0.f;
 
   if (reverserTimer > 0.f) {
-    // ── Reversed mode ──────────────────────────────────────────────────────
-    // No new row is spawned.  Each top-contiguous segment shifts UP by 1
-    // (copy direction flipped vs. normal: r+1 → r instead of r-1 → r).
-    // The brick at row 0 is destroyed; the slot at `bot` becomes empty.
     for (int c = 0; c < COLS; c++) {
-      if (cells[0][c] == BrickColor::EMPTY) continue;
+      if (cells[0][c] != BrickColor::EMPTY) {
+        BrickColor dc = cells[0][c];
+        SDL_Rect cr = cellRect(0, c);
+        ps.spawnBurst(cr.x + cr.w * 0.5f, cr.y + cr.h * 0.5f,
+                      BrickPal::Colors[static_cast<int>(dc)], 10);
+        score += BASE_SCORE;
+      }
 
-      // Find bottom of top-contiguous segment (same as normal mode).
-      int bot = 0;
-      while (bot + 1 < ROWS && cells[bot + 1][c] != BrickColor::EMPTY)
-        bot++;
-
-      // Destroy the brick being pushed off the top.
-      BrickColor dc = cells[0][c];
-      SDL_Rect   cr = cellRect(0, c);
-      ps.spawnBurst(cr.x + cr.w * 0.5f, cr.y + cr.h * 0.5f,
-                    BrickPal::Colors[static_cast<int>(dc)], 10);
-      score += 10;
-
-      // Shift segment UP: copy r+1 into r from top to bot-1.
-      for (int r = 0; r < bot; r++) {
+      // Shift every row up by 1 (r+1 → r). Loop to ROWS-2 so r+1 stays in
+      // bounds.
+      for (int r = 0; r < ROWS - 1; r++) {
         cells[r][c] = cells[r + 1][c];
         types[r][c] = types[r + 1][c];
       }
-      // Bottom of segment vacated.
-      cells[bot][c] = BrickColor::EMPTY;
-      types[bot][c] = BrickType::NORMAL;
+      // Bottom row vacated.
+      cells[ROWS - 1][c] = BrickColor::EMPTY;
+      types[ROWS - 1][c] = BrickType::NORMAL;
     }
-
   } else {
-    // ── Normal mode ────────────────────────────────────────────────────────
-    // Game-over: any top-contiguous segment whose bottom has reached ROWS-1.
     for (int c = 0; c < COLS; c++) {
-      if (cells[0][c] == BrickColor::EMPTY) continue;
+      if (cells[0][c] == BrickColor::EMPTY)
+        continue;
       int bot = 0;
       while (bot + 1 < ROWS && cells[bot + 1][c] != BrickColor::EMPTY)
         bot++;
@@ -222,7 +255,7 @@ void Map::update(float dt, bool &gameOver, int &score, ParticleSystem &ps) {
     // New bricks enter from the TOP (row 0).
     // Only TOP-contiguous segments shift DOWN by 1.
     BrickColor newRow[COLS];
-    BrickType  newTypes[COLS];
+    BrickType newTypes[COLS];
     spawnRow(newRow, newTypes);
 
     for (int c = 0; c < COLS; c++) {

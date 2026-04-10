@@ -213,8 +213,6 @@ void Render::drawScoreboard(SDL_Renderer *r, int score, float totalTime,
   renderText(r, font, timeBuf, WIN_W / 2 - tw / 2, midY, white);
 
   // --- Active power / reverser indicator (right-aligned) ---
-  // Show reverser and rainbow independently; reverser is a map state so it
-  // stacks with the ball's rainbow power if both happen to be active.
   const int rightPadding = 14;
   int indicatorX = WIN_W - rightPadding; // right edge for right-aligned text
 
@@ -276,7 +274,6 @@ void Render::drawGrid(SDL_Renderer *r, const Map &map) {
       fill(r, rc.x + 2, rc.y + rc.h - 5, rc.w - 4, 3);
       fill(r, rc.x + rc.w - 5, rc.y + 2, 3, rc.h - 4);
 
-      // Outline — special bricks get a distinctive border color
       if (type != BrickType::NORMAL) {
         Col borderCol;
         switch (type) {
@@ -302,7 +299,6 @@ void Render::drawGrid(SDL_Renderer *r, const Map &map) {
         SDL_Rect inner = {rc.x + 1, rc.y + 1, rc.w - 2, rc.h - 2};
         SDL_RenderDrawRect(r, &inner);
 
-        // Special brick icon
         drawSpecialBrickIcon(r, type, rc, cell);
 
         // Shine sweep animation
@@ -383,20 +379,25 @@ void Render::drawGameOver(SDL_Renderer *r) {
   SDL_Color subTextColor = {200, 200, 200, 255};
 
   SDL_Surface *surfMain = TTF_RenderText_Blended(font, "GAME OVER", textColor);
+  if (!surfMain) return;
   SDL_Texture *texMain = SDL_CreateTextureFromSurface(r, surfMain);
   SDL_Rect mainRect = {(WIN_W - surfMain->w) / 2, (WIN_H / 2) - surfMain->h,
                        surfMain->w, surfMain->h};
-  SDL_RenderCopy(r, texMain, nullptr, &mainRect);
+  SDL_FreeSurface(surfMain); // free surface before texture use as its no longer needed
+  if (texMain) {
+    SDL_RenderCopy(r, texMain, nullptr, &mainRect);
+    SDL_DestroyTexture(texMain);
+  }
 
   SDL_Surface *surfSub =
       TTF_RenderText_Blended(font, "Press R to try again", subTextColor);
+  if (!surfSub) return;
   SDL_Texture *texSub = SDL_CreateTextureFromSurface(r, surfSub);
   SDL_Rect subRect = {(WIN_W - surfSub->w) / 2, mainRect.y + mainRect.h + 20,
                       surfSub->w, surfSub->h};
-  SDL_RenderCopy(r, texSub, nullptr, &subRect);
-
-  SDL_FreeSurface(surfMain);
-  SDL_DestroyTexture(texMain);
   SDL_FreeSurface(surfSub);
-  SDL_DestroyTexture(texSub);
+  if (texSub) {
+    SDL_RenderCopy(r, texSub, nullptr, &subRect);
+    SDL_DestroyTexture(texSub);
+  }
 }

@@ -3,27 +3,48 @@
 #include <SDL2/SDL.h>
 
 struct Particle {
-    float x, y;
-    float vx, vy;
-    float life;   // [0, 1] — dies when <= 0
-    float decay;  // life lost per second
-    Col   color;
-    int   radius;
+  float x, y;
+  float vx, vy;
+  float life, decay;
+  Col color;
+  int radius; // base radius; actual drawn = radius * life (tapers to a point)
+  float
+      rgbDrift; // amplitude of per-channel sinusoidal hue shift as life drains
+  float perpX, perpY; // normalised perpendicular to spawn velocity (wave axis)
+  float waveAmp;      // transverse wave amplitude in pixels
+  float wavePhase;    // per-particle phase offset so neighbours are staggered
+  bool isTrail; // true = soft small flame dot; false = full bloom burst orb
+};
+
+struct BlastRing {
+  float x, y;
+  float life, decay;
+  float radius; // current radius (grows from 0 → maxRadius as life drains)
+  float maxRadius;
+  Col color;
 };
 
 struct ParticleSystem {
-    static constexpr int MAX = 2048;
-    Particle buf[MAX];
-    int      count = 0;
+  static constexpr int MAX = 2048;
+  static constexpr int MAX_RINGS = 32;
 
-    void reset() { count = 0; }
+  Particle buf[MAX];
+  int count = 0;
 
-    // Spawn a fading trail dot near (x,y), drifting away from the ball's velocity.
-    void spawnTrail(float x, float y, float vx, float vy, Col color);
+  BlastRing rings[MAX_RINGS];
+  int ringCount = 0;
 
-    // Spawn an outward burst of n particles at (x,y).
-    void spawnBurst(float x, float y, Col color, int n = 16);
+  void reset() {
+    count = 0;
+    ringCount = 0;
+  }
 
-    void update(float dt);
-    void draw(SDL_Renderer* r) const;
+  // Spawns a cluster of thick wavy orbs that hang in place behind the ball.
+  void spawnTrail(float x, float y, float vx, float vy, Col color);
+
+  // Spawns radial wavy-orb trails + an expanding neon shockwave ring.
+  void spawnBurst(float x, float y, Col color, int n = 16);
+
+  void update(float dt);
+  void draw(SDL_Renderer *r) const;
 };

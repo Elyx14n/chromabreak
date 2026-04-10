@@ -42,8 +42,31 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
 
   Col trailCol;
   if (power == BallPower::RAINBOW) {
-    // White-ish shimmer trail for rainbow
-    trailCol = {230, 230, 255};
+    // Cycle through full hue spectrum using powerTimer
+    float hue = fmodf((POWER_DURATION - powerTimer) * 2.5f, 6.f);
+    int hi = (int)hue;
+    float f = hue - (float)hi;
+    uint8_t t = (uint8_t)(f * 255.f), q = (uint8_t)((1.f - f) * 255.f);
+    switch (hi % 6) {
+    case 0:
+      trailCol = {255, t, 0};
+      break;
+    case 1:
+      trailCol = {q, 255, 0};
+      break;
+    case 2:
+      trailCol = {0, 255, t};
+      break;
+    case 3:
+      trailCol = {0, q, 255};
+      break;
+    case 4:
+      trailCol = {t, 0, 255};
+      break;
+    default:
+      trailCol = {255, 0, q};
+      break;
+    }
   } else {
     trailCol = BrickPal::Colors[static_cast<int>(color)];
   }
@@ -118,7 +141,7 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
         powerTimer = POWER_DURATION;
         map.cells[r][c] = BrickColor::EMPTY;
         map.types[r][c] = BrickType::NORMAL;
-        score += 10;
+        score += BASE_SCORE;
         ps.spawnBurst(cx, cy, brickCol, 28);
 
       } else if (bt == BrickType::REVERSER) {

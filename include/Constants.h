@@ -29,6 +29,7 @@ constexpr float BLOCK_SPAWN_RATE_INTERVAL = 180.f;
 constexpr float POWER_DURATION = 12.f;
 constexpr int TRANSFORMER_RADIUS = 4;
 constexpr int SPECIAL_BRICK_CHANCE = 6;
+constexpr int BASE_SCORE = 100;
 
 enum class BrickColor : uint8_t {
   EMPTY = 0,
@@ -46,7 +47,7 @@ enum class BrickType : uint8_t {
   BOMB,        // destroys all bricks of same color across the grid
   TRANSFORMER, // converts all bricks within radius to this color
   RAINBOW,     // gives ball rainbow power (breaks any color)
-  REVERSER,    // reverses brick row movement (breaking bricks)
+  REVERSER,    // reverses brick row movement (breaking bricks pushed to top)
 };
 
 enum class BallPower : uint8_t {
