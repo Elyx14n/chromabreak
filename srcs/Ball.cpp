@@ -15,11 +15,13 @@ Ball::Ball() {
   vx = BALL_SPEED * 0.55f;
   vy = -BALL_SPEED * 0.835f;
   color = BrickColor::RED;
+  power = BallPower::NONE;
+  powerTimer = 0.f;
 }
 
 void Ball::cycleColor() {
   int next = static_cast<int>(color) + 1;
-  if (next >= static_cast<int>(BrickColor::COLOR_COUNT)) 
+  if (next >= static_cast<int>(BrickColor::COLOR_COUNT))
     next = 1;
   color = static_cast<BrickColor>(next);
 }
@@ -29,11 +31,28 @@ SDL_Rect Ball::rect() const {
 }
 
 void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
-                  bool &gameOver) {
+                  bool &gameOver, ParticleSystem &ps) {
+  if (power != BallPower::NONE) {
+    powerTimer -= dt;
+    if (powerTimer <= 0.f) {
+      power = BallPower::NONE;
+      powerTimer = 0.f;
+    }
+  }
+
+  Col trailCol;
+  if (power == BallPower::RAINBOW) {
+    // White-ish shimmer trail for rainbow
+    trailCol = {230, 230, 255};
+  } else {
+    trailCol = BrickPal::Colors[static_cast<int>(color)];
+  }
+  ps.spawnTrail(x, y, vx, vy, trailCol);
+
   x += vx * dt;
   y += vy * dt;
 
-  // Wall bounce with explicit ball separation
+  // Wall bounce with explicit separation
   if (x - BALL_R < 0) {
     x = (float)BALL_R;
     vx = fabsf(vx);
@@ -52,6 +71,7 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
     return;
   }
 
+  // Paddle bounce
   SDL_Rect pr = paddle.rect();
   if (vy > 0.f && rectsOverlap(rect(), pr)) {
     y = (float)(pr.y - BALL_R);
@@ -64,6 +84,7 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
     return;
   }
 
+  // Brick collision
   for (int r = 0; r < ROWS; r++) {
     for (int c = 0; c < COLS; c++) {
       if (map.cells[r][c] == BrickColor::EMPTY)
@@ -78,12 +99,40 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
       int ox = std::min(br.x + br.w, cell.x + cell.w) - std::max(br.x, cell.x);
       int oy = std::min(br.y + br.h, cell.y + cell.h) - std::max(br.y, cell.y);
 
-      // Color match -> flood-fill destroy the connected group
-      if (map.cells[r][c] == color)
-        map.floodFill(r, c, map.cells[r][c], score);
+      BrickType bt = map.types[r][c];
+      BrickColor bc = map.cells[r][c];
+      float cx = cell.x + cell.w * 0.5f;
+      float cy = cell.y + cell.h * 0.5f;
+      Col brickCol = BrickPal::Colors[static_cast<int>(bc)];
 
-      // Separate ball completely from the brick, then force velocity
-      // direction AWAY from it (fabsf guards against double-reflection).
+      bool brickDestroyed = true;
+
+      if (bt == BrickType::BOMB) {
+        map.bombEffect(r, c, bc, score, ps);
+
+      } else if (bt == BrickType::TRANSFORMER) {
+        map.transformerEffect(r, c, bc, score, ps);
+
+      } else if (bt == BrickType::RAINBOW) {
+        power = BallPower::RAINBOW;
+        powerTimer = POWER_DURATION;
+        map.cells[r][c] = BrickColor::EMPTY;
+        map.types[r][c] = BrickType::NORMAL;
+        score += 10;
+        ps.spawnBurst(cx, cy, brickCol, 28);
+
+      } else if (bt == BrickType::REVERSER) {
+        map.reverserEffect(r, c, score, ps);
+      } else {
+        bool colorMatch = (bc == color) || (power == BallPower::RAINBOW);
+        if (colorMatch) {
+          map.floodFill(r, c, bc, score, ps);
+        } else {
+          brickDestroyed = false;
+        }
+      }
+
+      // Physical separation and direction-safe velocity flip
       if (ox <= oy) {
         if (x < cell.x + cell.w * 0.5f) {
           x -= ox;
