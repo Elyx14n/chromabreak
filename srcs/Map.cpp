@@ -80,10 +80,16 @@ void Map::bombEffect(int r, int c, BrickColor color, int &score,
   types[r][c] = BrickType::NORMAL;
   score += BASE_SCORE;
 
-  // Destroy all remaining normal bricks of the same color
-  for (int row = 0; row < ROWS; row++) {
-    for (int col = 0; col < COLS; col++) {
-      if (cells[row][col] == color && types[row][col] == BrickType::NORMAL) {
+  // Destroy all non-empty bricks within BOMB_RADIUS (Chebyshev)
+  int rMin = std::max(0, r - BOMB_RADIUS);
+  int rMax = std::min(ROWS - 1, r + BOMB_RADIUS);
+  int cMin = std::max(0, c - BOMB_RADIUS);
+  int cMax = std::min(COLS - 1, c + BOMB_RADIUS);
+
+  for (int row = rMin; row <= rMax; row++) {
+    for (int col = cMin; col <= cMax; col++) {
+      if (types[row][col] == BrickType::NORMAL &&
+          cells[row][col] != BrickColor::EMPTY) {
         SDL_Rect cell = cellRect(row, col);
         ps.spawnBurst(cell.x + cell.w * 0.5f, cell.y + cell.h * 0.5f, brickCol,
                       8);
@@ -115,10 +121,8 @@ void Map::transformerEffect(int r, int c, BrickColor color, int &score,
   for (int row = rMin; row <= rMax; row++) {
     for (int col = cMin; col <= cMax; col++) {
       if (cells[row][col] != BrickColor::EMPTY &&
-          types[row][col] == BrickType::NORMAL) {
+          types[row][col] != BrickType::TRANSFORMER)
         cells[row][col] = color;
-        types[row][col] = BrickType::NORMAL; // reset any special status
-      }
     }
   }
 }
@@ -194,8 +198,10 @@ void Map::spawnRow(BrickColor *out, BrickType *outTypes) const {
           adjacent = true;
         for (int dc = -1; dc <= 1 && !adjacent; dc++) {
           int nc = pos + dc;
-          if (nc >= 0 && nc < COLS && types[0][nc] != BrickType::NORMAL)
+          if (nc >= 0 && nc < COLS && types[0][nc] != BrickType::NORMAL) {
             adjacent = true;
+            break;
+          }
         }
         if (adjacent)
           bt = BrickType::NORMAL;

@@ -28,6 +28,7 @@ constexpr float BLOCK_SPAWN_RATE_INTERVAL = 180.f;
 
 constexpr float POWER_DURATION = 12.f;
 constexpr int TRANSFORMER_RADIUS = 4;
+constexpr int BOMB_RADIUS = 2;
 constexpr int SPECIAL_BRICK_CHANCE = 6;
 constexpr int BASE_SCORE = 100;
 
