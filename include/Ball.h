@@ -19,5 +19,6 @@ struct Ball {
               bool &gameOver, ParticleSystem &ps);
 
   void cycleColor();
+  void handleColor(SDL_Keycode key);
   SDL_Rect rect() const;
 };

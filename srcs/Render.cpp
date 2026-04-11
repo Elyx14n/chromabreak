@@ -115,9 +115,6 @@ static void drawSpecialBrickIconBackground(SDL_Renderer *r, SDL_Rect rc,
 
 static void drawSpecialBrickIcon(SDL_Renderer *r, BrickType type, SDL_Rect rc,
                                  BrickColor color) {
-  if (type != BrickType::RAINBOW && type != BrickType::REVERSER)
-    drawSpecialBrickIconBackground(r, rc, color);
-
   int cx = rc.x + rc.w / 2;
   int cy = rc.y + rc.h / 2;
 
@@ -134,6 +131,7 @@ static void drawSpecialBrickIcon(SDL_Renderer *r, BrickType type, SDL_Rect rc,
     break;
   }
   case BrickType::TRANSFORMER: {
+    drawSpecialBrickIconBackground(r, rc, color);
     SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
     // Outer Diamond
     SDL_RenderDrawLine(r, cx, cy - 7, cx + 7, cy);

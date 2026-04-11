@@ -85,7 +85,7 @@ constexpr Col Colors[static_cast<int>(BrickColor::COLOR_COUNT)] = {
 
 // Special-brick colors
 namespace SpecialPal {
-constexpr Col Base = {240, 245, 255};       // Platinum
+constexpr Col Base = {240, 245, 255}; // Platinum
 constexpr Col Bomb = {255, 80, 40};  // border
 constexpr Col Transformer = {200, 80, 255}; // border
 constexpr Col Rainbow = {255, 255, 200};    // border

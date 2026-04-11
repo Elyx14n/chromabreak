@@ -177,3 +177,31 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
     }
   }
 }
+
+void Ball::handleColor(SDL_Keycode key) {
+  switch (key) {
+  case SDLK_q:
+    color = BrickColor::RED;
+    break;
+  case SDLK_w:
+    color = BrickColor::BLUE;
+    break;
+  case SDLK_e:
+    color = BrickColor::GREEN;
+    break;
+  case SDLK_a:
+    color = BrickColor::YELLOW;
+    break;
+  case SDLK_s:
+    color = BrickColor::ORANGE;
+    break;
+  case SDLK_d:
+    color = BrickColor::PURPLE;
+    break;
+  case SDLK_SPACE:
+    cycleColor();
+    break;
+  default:
+    break;
+  }
+}

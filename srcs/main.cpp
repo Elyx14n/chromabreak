@@ -46,9 +46,8 @@ int main(int, char *[]) {
         running = false;
 
       if (event.type == SDL_KEYDOWN) {
-        if (state == PLAYING && event.key.keysym.sym == SDLK_SPACE) {
-          ball.cycleColor();
-        }
+        if (state == PLAYING)
+          ball.handleColor(event.key.keysym.sym);
         if (state == GAME_OVER && event.key.keysym.sym == SDLK_r) {
           map.init();
           paddle = Paddle();
