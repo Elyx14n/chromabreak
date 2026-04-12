@@ -33,8 +33,6 @@ SDL_Rect Ball::rect() const {
 
 void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
                   bool &gameOver, ParticleSystem &ps, Audio &audio) {
-  (void)audio; // reserved for future per-event sfx calls
-
   if (power_ != BallPower::NONE) {
     powerTimer_ -= dt;
     if (powerTimer_ <= 0.f) {
@@ -78,14 +76,17 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
   y_ += vy_ * dt;
 
   if (x_ - BALL_R < 0) {
+    audio.playSound(SFXLib::BallRebound);
     x_ = (float)BALL_R;
     vx_ = fabsf(vx_);
   }
   if (x_ + BALL_R > WIN_W) {
+    audio.playSound(SFXLib::BallRebound);
     x_ = WIN_W - (float)BALL_R;
     vx_ = -fabsf(vx_);
   }
   if (y_ - BALL_R < TOP_MARGIN) {
+    audio.playSound(SFXLib::BallRebound);
     y_ = TOP_MARGIN + (float)BALL_R;
     vy_ = fabsf(vy_);
   }
@@ -98,6 +99,7 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
   // Paddle bounce
   SDL_Rect pr = paddle.rect();
   if (vy_ > 0.f && rectsOverlap(rect(), pr)) {
+    audio.playSound(SFXLib::BallPad);
     y_ = (float)(pr.y - BALL_R);
     float rel =
         std::max(-1.f, std::min(1.f, (x_ - paddle.getX()) / (PADDLE_W * 0.5f)));
@@ -129,14 +131,19 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
       Col brickCol = BrickPal::Colors[static_cast<int>(bc)];
 
       bool brickDestroyed = true;
+      if (bc != BrickColor::EMPTY)
+        audio.playSound(SFXLib::BallRebound);
 
       if (bt == BrickType::BOMB) {
+        audio.playSound(SFXLib::Bomb);
         map.bombEffect(r, c, bc, score, ps);
 
       } else if (bt == BrickType::TRANSFORMER) {
+        audio.playSound(SFXLib::Transformer);
         map.transformerEffect(r, c, bc, score, ps);
 
       } else if (bt == BrickType::RAINBOW) {
+        audio.playSound(SFXLib::Rainbow);
         power_ = BallPower::RAINBOW;
         powerTimer_ = POWER_DURATION;
         map.clearCell(r, c);
@@ -144,12 +151,16 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
         ps.spawnBurst(cx, cy, brickCol, 28);
 
       } else if (bt == BrickType::REVERSER) {
+        audio.playSound(SFXLib::Reverser);
         map.reverserEffect(r, c, score, ps);
 
       } else {
         bool colorMatch = (bc == color_) || (power_ == BallPower::RAINBOW);
         if (colorMatch) {
-          map.floodFill(r, c, bc, score, ps);
+          int gained = map.floodFill(r, c, bc, score, ps);
+          audio.playRandomBreakSingle();
+          if (gained > BASE_SCORE * 3)
+            audio.playRandomBreakMultiple();
         } else {
           brickDestroyed = false;
         }

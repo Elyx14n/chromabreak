@@ -1,15 +1,16 @@
 #pragma once
 #include "Constants.h"
 #include "Particles.h"
+#include "Audio.h"
 #include <SDL2/SDL.h>
 #include <cstdint>
 
 class Map {
 public:
   void init();
-  void update(float dt, bool &gameOver, int &score, ParticleSystem &ps);
+  void update(float dt, bool &gameOver, int &score, ParticleSystem &ps, Audio &a);
 
-  void floodFill(int r, int c, BrickColor color, int &score,
+  int floodFill(int r, int c, BrickColor color, int &score,
                  ParticleSystem &ps);
   void bombEffect(int r, int c, BrickColor color, int &score,
                   ParticleSystem &ps);

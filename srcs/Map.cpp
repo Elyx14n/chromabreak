@@ -1,5 +1,5 @@
 #include "Map.h"
-
+#include "Audio.h"
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
@@ -25,13 +25,14 @@ float Map::currentSpawnRate() const {
   return BLOCK_SPAWN_RATE_DEFAULT;
 }
 
-void Map::floodFill(int startR, int startC, BrickColor color, int &score,
-                    ParticleSystem &ps) {
+int Map::floodFill(int startR, int startC, BrickColor color, int &score,
+                   ParticleSystem &ps) {
   struct Pos {
     int8_t r, c;
   };
   Pos stack[ROWS * COLS];
   int top = 0;
+  int currScore = 0;
 
   {
     SDL_Rect cell = cellRect(startR, startC);
@@ -41,6 +42,7 @@ void Map::floodFill(int startR, int startC, BrickColor color, int &score,
   cells_[startR][startC] = BrickColor::EMPTY;
   types_[startR][startC] = BrickType::NORMAL;
   score += BASE_SCORE;
+  currScore += BASE_SCORE;
   stack[top++] = {(int8_t)startR, (int8_t)startC};
 
   static const int8_t dr[] = {-1, 1, 0, 0};
@@ -63,9 +65,11 @@ void Map::floodFill(int startR, int startC, BrickColor color, int &score,
       cells_[nr][nc] = BrickColor::EMPTY;
       types_[nr][nc] = BrickType::NORMAL;
       score += BASE_SCORE;
+      currScore += BASE_SCORE;
       stack[top++] = {(int8_t)nr, (int8_t)nc};
     }
   }
+  return currScore;
 }
 
 void Map::bombEffect(int r, int c, BrickColor color, int &score,
@@ -203,9 +207,11 @@ void Map::spawnRow(BrickColor *out, BrickType *outTypes) const {
   }
 }
 
-void Map::update(float dt, bool &gameOver, int &score, ParticleSystem &ps) {
+void Map::update(float dt, bool &gameOver, int &score, ParticleSystem &ps,
+                 Audio &a) {
   totalTime_ += dt;
   spawnTimer_ += dt;
+  int currScore = 0;
 
   if (reverserTimer_ > 0.f)
     reverserTimer_ = std::max(0.f, reverserTimer_ - dt);
@@ -215,6 +221,7 @@ void Map::update(float dt, bool &gameOver, int &score, ParticleSystem &ps) {
   spawnTimer_ = 0.f;
 
   if (reverserTimer_ > 0.f) {
+    bool hasRowShift = false;
     for (int c = 0; c < COLS; c++) {
       if (cells_[0][c] != BrickColor::EMPTY) {
         BrickColor dc = cells_[0][c];
@@ -222,6 +229,8 @@ void Map::update(float dt, bool &gameOver, int &score, ParticleSystem &ps) {
         ps.spawnBurst(cr.x + cr.w * 0.5f, cr.y + cr.h * 0.5f,
                       BrickPal::Colors[static_cast<int>(dc)], 10);
         score += BASE_SCORE;
+        currScore += BASE_SCORE;
+        hasRowShift = true;
       }
 
       for (int r = 0; r < ROWS - 1; r++) {
@@ -231,6 +240,12 @@ void Map::update(float dt, bool &gameOver, int &score, ParticleSystem &ps) {
       cells_[ROWS - 1][c] = BrickColor::EMPTY;
       types_[ROWS - 1][c] = BrickType::NORMAL;
     }
+    if (hasRowShift)
+      a.playSound(SFXLib::RowShift);
+    if (currScore > BASE_SCORE)
+      a.playRandomBreakSingle();
+    if (currScore > BASE_SCORE * 3)
+      a.playRandomBreakMultiple();
   } else {
     for (int c = 0; c < COLS; c++) {
       if (cells_[0][c] == BrickColor::EMPTY)
@@ -247,6 +262,7 @@ void Map::update(float dt, bool &gameOver, int &score, ParticleSystem &ps) {
     BrickColor newRow[COLS];
     BrickType newTypes[COLS];
     spawnRow(newRow, newTypes);
+    a.playSound(SFXLib::RowShift);
 
     for (int c = 0; c < COLS; c++) {
       if (cells_[0][c] != BrickColor::EMPTY) {

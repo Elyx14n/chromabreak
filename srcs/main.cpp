@@ -74,6 +74,8 @@ int main(int, char *[]) {
           score = 0;
           gameOver = false;
           state = GameState::PLAYING;
+          audio.playSound(SFXLib::Menu);
+          audio.shuffle = true;
         }
       }
     }
@@ -81,10 +83,15 @@ int main(int, char *[]) {
     if (state == GameState::PLAYING) {
       paddle.update(dt, keys);
       ball.update(dt, paddle, map, score, gameOver, particles, audio);
-      map.update(dt, gameOver, score, particles);
+      map.update(dt, gameOver, score, particles, audio);
       particles.update(dt);
-      if (gameOver)
-        state = GameState::GAME_OVER;
+      if (audio.shuffle && Mix_PlayingMusic() == 0)
+        audio.playRandomMusic();
+      if (gameOver) {
+        audio.playSound(SFXLib::Menu);
+        audio.stopMusic();
+        state = GameState::GAME_OVER;      
+			}
     }
 
     SDL_SetRenderDrawColor(r, Pal::Outside.r, Pal::Outside.g, Pal::Outside.b,

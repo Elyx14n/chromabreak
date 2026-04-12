@@ -118,22 +118,27 @@ struct SFX {
  * are applied to the cached SDL_mixer chunks.
  */
 namespace SFXLib {
-inline SFX BallPad = {"assets/sfx/ball_pad.wav", 128};
-inline SFX BallRebound = {"assets/sfx/ball_rebound.wav", 100};
-inline SFX RowShift = {"assets/sfx/row_shift.wav", 128};
-inline SFX Break1 = {"assets/sfx/break_1.wav", 110};
-inline SFX Break2 = {"assets/sfx/break_2.wav", 110};
-inline SFX Break3 = {"assets/sfx/break_3.wav", 110};
-inline SFX Break4 = {"assets/sfx/break_4.wav", 110};
-inline SFX BreakMultiple1 = {"assets/sfx/break_multiple_1.wav", 128};
-inline SFX BreakMultiple2 = {"assets/sfx/break_multiple_2.wav", 128};
-inline SFX Bomb = {"assets/sfx/bomb.wav", 90};
-inline SFX Rainbow = {"assets/sfx/rainbow.wav", 120};
-inline SFX Transformer = {"assets/sfx/transformer.wav", 110};
-inline SFX ReverserOn = {"assets/sfx/reverser_on.wav", 128};
-inline SFX ReverserOff = {"assets/sfx/reverser_off.wav", 128};
-inline SFX Menu = {"assets/sfx/menu.wav", 80};
-inline SFX BallColorSwap = {"assets/sfx/ball_color_swap.wav", 80};
+inline SFX BallPad = {"assets/sfx/ball_pad.wav", 50};
+inline SFX BallRebound = {"assets/sfx/ball_rebound.wav", 50};
+inline SFX RowShift = {"assets/sfx/row_shift.wav", 40};
+inline SFX Break1 = {"assets/sfx/break_1.wav", 40};
+inline SFX Break2 = {"assets/sfx/break_2.wav", 45};
+inline SFX Break3 = {"assets/sfx/break_3.wav", 45};
+inline SFX Break4 = {"assets/sfx/break_4.wav", 40};
+inline SFX BreakMultiple1 = {"assets/sfx/break_multiple_1.wav", 40};
+inline SFX BreakMultiple2 = {"assets/sfx/break_multiple_2.wav", 40};
+inline SFX Bomb = {"assets/sfx/bomb.wav", 60};
+inline SFX Rainbow = {"assets/sfx/rainbow.wav", 60};
+inline SFX Transformer = {"assets/sfx/transformer.wav", 60};
+inline SFX Reverser = {"assets/sfx/reverser_on.wav", 60};
+inline SFX Menu = {"assets/sfx/menu.wav", 50};
+inline SFX BallColorSwap = {"assets/sfx/ball_color_swap.wav", 50};
 } // namespace SFXLib
+
+namespace MusicLib {
+inline SFX ForsakenOne = {"assets/music/forsaken_one.ogg", 70};
+inline SFX NeonTwilight = {"assets/music/neon_twilight.ogg", 70};
+inline SFX LosingYou = {"assets/music/losing_you.ogg", 50};
+} // namespace MusicLib
 
 enum class GameState { PLAYING, GAME_OVER };
