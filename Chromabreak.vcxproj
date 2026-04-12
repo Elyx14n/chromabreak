@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="srcs\Audio.cpp" />
     <ClCompile Include="srcs\Ball.cpp" />
     <ClCompile Include="srcs\main.cpp" />
     <ClCompile Include="srcs\Map.cpp" />
@@ -27,6 +28,7 @@
     <ClCompile Include="srcs\Render.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\Audio.h" />
     <ClInclude Include="include\Ball.h" />
     <ClInclude Include="include\Constants.h" />
     <ClInclude Include="include\Map.h" />
@@ -147,15 +149,17 @@ xcopy /y /d "$(ProjectDir)SDL2_ttf.dll" "$(OutDir)"</Command>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)SDL2.dll" "$(OutDir)"
-xcopy /y /d "$(ProjectDir)SDL2_ttf.dll" "$(OutDir)"</Command>
+xcopy /y /d "$(ProjectDir)SDL2_ttf.dll" "$(OutDir)"
+xcopy /y /d "$(ProjectDir)SDL2_mixer.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -166,15 +170,17 @@ xcopy /y /d "$(ProjectDir)SDL2_ttf.dll" "$(OutDir)"</Command>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)SDL2.dll" "$(OutDir)"
-xcopy /y /d "$(ProjectDir)SDL2_ttf.dll" "$(OutDir)"</Command>
+xcopy /y /d "$(ProjectDir)SDL2_ttf.dll" "$(OutDir)"
+xcopy /y /d "$(ProjectDir)SDL2_mixer.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

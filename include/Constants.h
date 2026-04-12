@@ -61,11 +61,11 @@ struct Col {
 };
 
 namespace Pal {
-constexpr Col Floor       = { 35,  30,  45};  // dark purple obsidian
-constexpr Col WallBase    = { 45,  38,  58};  // slightly lifted obsidian for HUD bar
-constexpr Col WallHi      = {200,  80, 140};  // vivid pink — divider line + HUD border
-constexpr Col WallShade   = { 80,  45,  80};  // muted mauve — empty-cell grid lines
-constexpr Col Outside     = { 20,  16,  28};  // near-black purple for letterbox
+constexpr Col Floor = {35, 30, 45};    // dark purple obsidian
+constexpr Col WallBase = {45, 38, 58}; // slightly lifted obsidian for HUD bar
+constexpr Col WallHi = {200, 80, 140}; // vivid pink — divider line + HUD border
+constexpr Col WallShade = {80, 45, 80}; // muted mauve — empty-cell grid lines
+constexpr Col Outside = {20, 16, 28};   // near-black purple for letterbox
 constexpr Col PaddleBase = {255, 50, 150};
 constexpr Col PaddleHi = {255, 200, 235};
 constexpr Col PaddleShade = {120, 20, 80};
@@ -85,13 +85,55 @@ constexpr Col Colors[static_cast<int>(BrickColor::COLOR_COUNT)] = {
 
 // Special-brick colors
 namespace SpecialPal {
-constexpr Col Base = {240, 245, 255}; // Platinum
-constexpr Col Bomb = {255, 80, 40};  // border
+constexpr Col Base = {240, 245, 255};       // Platinum
+constexpr Col Bomb = {255, 80, 40};         // border
 constexpr Col Transformer = {200, 80, 255}; // border
 constexpr Col Rainbow = {255, 255, 200};    // border
 constexpr Col Reverser = {60, 230, 255};    // border
-}
+} // namespace SpecialPal
 
 static const std::locale LOCALE("");
 const char *const FONT_PATH = "assets/font.ttf";
 constexpr int FONT_SIZE = 32;
+
+struct SFX {
+  const char *path;
+  int volume;
+};
+
+/**
+ * SFX INFRASTRUCTURE NOTE (C++17):
+ * * 1. STRUCT DESIGN: Uses 'const char*' for paths to safely point to string
+ * literals. Treating them as 'char* const' would incorrectly imply the text is
+ * mutable, leading to compiler errors (E0144).
+ * * 2. THE INLINE ADVANTAGE: We use 'inline' variables to allow these
+ * definitions to live entirely within this header file. This prevents "Multiple
+ * Definition" linker errors when included in multiple .cpp files.
+ * * 3. WHY NOT constexpr? While volumes are hardcoded here, 'inline' allows
+ * them to remains mutable at runtime. This is crucial for live-testing and
+ * balancing audio levels without recompiling. Unlike 'static', 'inline' ensures
+ * every file shares the same memory address for these objects.
+ * * 4. AUDIO ENGINE INTEGRATION: Audio::playSound() should update
+ * Mix_VolumeChunk on every call to ensure that the volumes defined in SFXLib
+ * are applied to the cached SDL_mixer chunks.
+ */
+namespace SFXLib {
+inline SFX BallPad = {"assets/sfx/ball_pad.wav", 128};
+inline SFX BallRebound = {"assets/sfx/ball_rebound.wav", 100};
+inline SFX RowShift = {"assets/sfx/row_shift.wav", 128};
+inline SFX Break1 = {"assets/sfx/break_1.wav", 110};
+inline SFX Break2 = {"assets/sfx/break_2.wav", 110};
+inline SFX Break3 = {"assets/sfx/break_3.wav", 110};
+inline SFX Break4 = {"assets/sfx/break_4.wav", 110};
+inline SFX BreakMultiple1 = {"assets/sfx/break_multiple_1.wav", 128};
+inline SFX BreakMultiple2 = {"assets/sfx/break_multiple_2.wav", 128};
+inline SFX Bomb = {"assets/sfx/bomb.wav", 90};
+inline SFX Rainbow = {"assets/sfx/rainbow.wav", 120};
+inline SFX Transformer = {"assets/sfx/transformer.wav", 110};
+inline SFX ReverserOn = {"assets/sfx/reverser_on.wav", 128};
+inline SFX ReverserOff = {"assets/sfx/reverser_off.wav", 128};
+inline SFX Menu = {"assets/sfx/menu.wav", 80};
+inline SFX BallColorSwap = {"assets/sfx/ball_color_swap.wav", 80};
+} // namespace SFXLib
+
+enum class GameState { PLAYING, GAME_OVER };

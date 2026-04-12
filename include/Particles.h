@@ -2,49 +2,43 @@
 #include "Constants.h"
 #include <SDL2/SDL.h>
 
-struct Particle {
-  float x, y;
-  float vx, vy;
-  float life, decay;
-  Col color;
-  int radius; // base radius; actual drawn = radius * life (tapers to a point)
-  float
-      rgbDrift; // amplitude of per-channel sinusoidal hue shift as life drains
-  float perpX, perpY; // normalised perpendicular to spawn velocity (wave axis)
-  float waveAmp;      // transverse wave amplitude in pixels
-  float wavePhase;    // per-particle phase offset so neighbours are staggered
-  bool isTrail; // true = soft small flame dot; false = full bloom burst orb
-};
+class ParticleSystem {
+public:
+  ParticleSystem() = default;
 
-struct BlastRing {
-  float x, y;
-  float life, decay;
-  float radius; // current radius (grows from 0 → maxRadius as life drains)
-  float maxRadius;
-  Col color;
-};
+  void reset();
+  void spawnTrail(float x, float y, float vx, float vy, Col color);
+  void spawnBurst(float x, float y, Col color, int n = 16);
+  void update(float dt);
+  void draw(SDL_Renderer *r) const;
 
-struct ParticleSystem {
+private:
   static constexpr int MAX = 2048;
   static constexpr int MAX_RINGS = 32;
 
-  Particle buf[MAX];
-  int count = 0;
+  struct Particle {
+    float x, y;
+    float vx, vy;
+    float life, decay;
+    Col color;
+    int radius;
+    float rgbDrift;
+    float perpX, perpY;
+    float waveAmp;
+    float wavePhase;
+    bool isTrail;
+  };
 
-  BlastRing rings[MAX_RINGS];
-  int ringCount = 0;
+  struct BlastRing {
+    float x, y;
+    float life, decay;
+    float radius;
+    float maxRadius;
+    Col color;
+  };
 
-  void reset() {
-    count = 0;
-    ringCount = 0;
-  }
-
-  // Spawns a cluster of thick wavy orbs that hang in place behind the ball.
-  void spawnTrail(float x, float y, float vx, float vy, Col color);
-
-  // Spawns radial wavy-orb trails + an expanding neon shockwave ring.
-  void spawnBurst(float x, float y, Col color, int n = 16);
-
-  void update(float dt);
-  void draw(SDL_Renderer *r) const;
+  Particle buf_[MAX];
+  int count_ = 0;
+  BlastRing rings_[MAX_RINGS];
+  int ringCount_ = 0;
 };

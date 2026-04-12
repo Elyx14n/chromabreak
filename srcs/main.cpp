@@ -1,3 +1,4 @@
+#include "Audio.h"
 #include "Ball.h"
 #include "Constants.h"
 #include "Map.h"
@@ -8,16 +9,33 @@
 #include <SDL2/SDL_ttf.h>
 #include <algorithm>
 
-enum GameState { PLAYING, GAME_OVER };
-
 int main(int, char *[]) {
-  SDL_Init(SDL_INIT_VIDEO);
-  TTF_Init();
+  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Initialization Error",
+                             "Could not initialize SDL", nullptr);
+    return 1;
+  }
+  if (TTF_Init() < 0) {
+    SDL_Log("TTF_Init Error: %s", TTF_GetError());
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Initialization Error",
+                             "Could not initialize SDL_ttf", nullptr);
+    return 1;
+  }
+
+  Audio audio;
+  if (!audio.ok()) {
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Initialization Error",
+                             "Could not initialize SDL_mixer", nullptr);
+    return 1;
+  }
+
   SDL_Window *w = SDL_CreateWindow("Chromabreak", SDL_WINDOWPOS_CENTERED,
                                    SDL_WINDOWPOS_CENTERED, WIN_W, WIN_H, 0);
   SDL_Renderer *r = SDL_CreateRenderer(
       w, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-  Render::font = TTF_OpenFont(FONT_PATH, FONT_SIZE);
+
+  Render render(r);
 
   Map map;
   Paddle paddle;
@@ -25,7 +43,7 @@ int main(int, char *[]) {
   ParticleSystem particles;
   int score = 0;
   bool gameOver = false;
-  GameState state = PLAYING;
+  GameState state = GameState::PLAYING;
 
   map.init();
 
@@ -46,46 +64,46 @@ int main(int, char *[]) {
         running = false;
 
       if (event.type == SDL_KEYDOWN) {
-        if (state == PLAYING)
-          ball.handleColor(event.key.keysym.sym);
-        if (state == GAME_OVER && event.key.keysym.sym == SDLK_r) {
+        if (state == GameState::PLAYING)
+          ball.handleColor(event.key.keysym.sym, audio);
+        if (state == GameState::GAME_OVER && event.key.keysym.sym == SDLK_r) {
           map.init();
           paddle = Paddle();
           ball = Ball();
           particles.reset();
           score = 0;
           gameOver = false;
-          state = PLAYING;
+          state = GameState::PLAYING;
         }
       }
     }
 
-    if (state == PLAYING) {
+    if (state == GameState::PLAYING) {
       paddle.update(dt, keys);
-      ball.update(dt, paddle, map, score, gameOver, particles);
+      ball.update(dt, paddle, map, score, gameOver, particles, audio);
       map.update(dt, gameOver, score, particles);
       particles.update(dt);
       if (gameOver)
-        state = GAME_OVER;
+        state = GameState::GAME_OVER;
     }
 
     SDL_SetRenderDrawColor(r, Pal::Outside.r, Pal::Outside.g, Pal::Outside.b,
                            255);
     SDL_RenderClear(r);
 
-    Render::drawGrid(r, map);
-    Render::drawParticles(r, particles);
-    Render::drawPaddle(r, paddle);
-    Render::drawBall(r, ball, map.totalTime);
-    Render::drawScoreboard(r, score, map.totalTime, ball, map.reverserTimer);
+    render.drawGrid(map);
+    render.drawParticles(particles);
+    render.drawPaddle(paddle);
+    render.drawBall(ball, map.getTotalTime());
+    render.drawScoreboard(score, map.getTotalTime(), ball,
+                          map.getReverserTimer());
 
-    if (state == GAME_OVER)
-      Render::drawGameOver(r);
+    if (state == GameState::GAME_OVER)
+      render.drawGameOver();
 
     SDL_RenderPresent(r);
   }
 
-  TTF_CloseFont(Render::font);
   TTF_Quit();
   SDL_DestroyRenderer(r);
   SDL_DestroyWindow(w);

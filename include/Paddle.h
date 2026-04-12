@@ -3,11 +3,14 @@
 #include <SDL2/SDL.h>
 #include <cstdint>
 
-struct Paddle {
-  float x, y;
-
-  Paddle() : x(WIN_W / 2), y(PADDLE_Y) {}
+class Paddle {
+public:
+  Paddle();
 
   void update(float dt, const uint8_t *keys);
   SDL_Rect rect() const;
-}; 
+  float getX() const { return x_; }
+
+private:
+  float x_, y_;
+};
