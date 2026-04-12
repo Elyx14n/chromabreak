@@ -136,31 +136,39 @@ void Map::reverserEffect(int r, int c, int &score, ParticleSystem &ps) {
   reverserTimer_ = POWER_DURATION;
 }
 
-BrickType Map::spawnBrickType(BrickColor bc) const {
-  if (rand() % 100 < SPECIAL_BRICK_CHANCE) {
-    BrickType bt = static_cast<BrickType>(1 + rand() % 4);
-    if (bt == BrickType::TRANSFORMER) {
-      auto hasExistingColorAndType = [this, bc, bt]() -> bool {
-        for (int r = 0; r < ROWS; r++)
-          for (int c = 0; c < COLS; c++)
-            if (cells_[r][c] == bc && types_[r][c] == bt)
-              return true;
-        return false;
-      };
-      if (hasExistingColorAndType()) {
-        int reroll = rand() % 4;
-        if (reroll == 0)
-          return BrickType::BOMB;
-        else if (reroll == 1)
-          return BrickType::REVERSER;
-        else if (reroll == 2)
-          return BrickType::RAINBOW;
+int Map::countNormalBricks() const {
+  int count = 0;
+  for (int r = 0; r < ROWS; r++)
+    for (int c = 0; c < COLS; c++)
+      if (cells_[r][c] != BrickColor::EMPTY && types_[r][c] == BrickType::NORMAL)
+        count++;
+  return count;
+}
+
+BrickType Map::spawnBrickType(BrickColor *out, BrickType *outTypes,
+                              int pos) const {
+  if (rand() % 100 >= SPECIAL_BRICK_CHANCE)
+    return BrickType::NORMAL;
+
+  for (int dc = -SPECIAL_ADJACENCY_RADIUS; dc <= SPECIAL_ADJACENCY_RADIUS; dc++) {
+    int nc = pos + dc;
+    if (nc < 0 || nc >= COLS)
+      continue;
+    if (outTypes[nc] != BrickType::NORMAL)
+      return BrickType::NORMAL;
+    for (int dr = 0; dr < SPECIAL_ADJACENCY_ROW_DEPTH; dr++)
+      if (types_[dr][nc] != BrickType::NORMAL)
         return BrickType::NORMAL;
-      }
-    }
-    return bt;
   }
-  return BrickType::NORMAL;
+
+	if (countNormalBricks() < SPECIAL_BRICK_MIN_COLORED_COUNT)
+    return BrickType::NORMAL;
+
+  int roll = rand() % 4;
+  return roll == 0   ? BrickType::BOMB
+         : roll == 1 ? BrickType::TRANSFORMER
+         : roll == 2 ? BrickType::RAINBOW
+                     : BrickType::REVERSER;
 }
 
 void Map::spawnRow(BrickColor *out, BrickType *outTypes) const {
@@ -183,29 +191,8 @@ void Map::spawnRow(BrickColor *out, BrickType *outTypes) const {
       color = static_cast<BrickColor>(1 + rand() % 6);
 
     for (int i = 0; i < runLen; i++) {
-      BrickType bt = spawnBrickType(color);
-
-      if (bt != BrickType::NORMAL) {
-        int pos = col + i;
-        bool adjacent = false;
-        // Check within a 2-tile radius: the new row being built
-        // (outTypes) and the 2 existing top rows (types_[0], types_[1]).
-        for (int dc = -2; dc <= 2 && !adjacent; dc++) {
-          int nc = pos + dc;
-          if (nc < 0 || nc >= COLS)
-            continue;
-          if (outTypes[nc] != BrickType::NORMAL)
-            adjacent = true;
-          for (int dr = 0; dr < 2 && !adjacent; dr++) {
-            if (types_[dr][nc] != BrickType::NORMAL)
-              adjacent = true;
-          }
-        }
-        if (adjacent)
-          bt = BrickType::NORMAL;
-      }
-
-      outTypes[col + i] = bt;
+      int pos = col + i;
+      outTypes[col + i] = spawnBrickType(out, outTypes, pos);
       out[col + i] = color;
     }
 

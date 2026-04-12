@@ -31,6 +31,9 @@ constexpr int TRANSFORMER_RADIUS = 4;
 constexpr int BOMB_RADIUS = 2;
 constexpr int SPECIAL_BRICK_CHANCE = 6;
 constexpr int BASE_SCORE = 100;
+constexpr int SPECIAL_ADJACENCY_RADIUS   = 2; // column radius for special-near-special check
+constexpr int SPECIAL_ADJACENCY_ROW_DEPTH = 2; // row depth for adjacency check
+constexpr int SPECIAL_BRICK_MIN_COLORED_COUNT = COLS;
 
 enum class BrickColor : uint8_t {
   EMPTY = 0,

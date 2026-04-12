@@ -1,17 +1,17 @@
 #pragma once
+#include "Audio.h"
 #include "Constants.h"
 #include "Particles.h"
-#include "Audio.h"
 #include <SDL2/SDL.h>
 #include <cstdint>
 
 class Map {
 public:
   void init();
-  void update(float dt, bool &gameOver, int &score, ParticleSystem &ps, Audio &a);
+  void update(float dt, bool &gameOver, int &score, ParticleSystem &ps,
+              Audio &a);
 
-  int floodFill(int r, int c, BrickColor color, int &score,
-                 ParticleSystem &ps);
+  int floodFill(int r, int c, BrickColor color, int &score, ParticleSystem &ps);
   void bombEffect(int r, int c, BrickColor color, int &score,
                   ParticleSystem &ps);
   void transformerEffect(int r, int c, BrickColor color, int &score,
@@ -41,5 +41,6 @@ private:
 
   float currentSpawnRate() const;
   void spawnRow(BrickColor *out, BrickType *outTypes) const;
-  BrickType spawnBrickType(BrickColor bc) const;
+  BrickType spawnBrickType(BrickColor *out, BrickType *outTypes, int pos) const;
+  int countNormalBricks() const;
 };
