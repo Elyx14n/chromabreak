@@ -1,4 +1,5 @@
 #include "Render.h"
+#include "Audio.h"
 #include "Ball.h"
 #include "Map.h"
 #include "Paddle.h"
@@ -10,7 +11,6 @@
 #include <string>
 
 // ── file-local helpers
-// ────────────────────────────────────────────────────────
 
 static void renderText(SDL_Renderer *r, TTF_Font *font, const char *text, int x,
                        int y, SDL_Color color, bool rightAlign = false) {
@@ -167,7 +167,6 @@ static void drawSpecialBrickIcon(SDL_Renderer *r, BrickType type, SDL_Rect rc,
 }
 
 // ── Render members
-// ────────────────────────────────────────────────────────────
 
 Render::Render(SDL_Renderer *r) : r_(r), font_(nullptr) {
   font_ = TTF_OpenFont(FONT_PATH, FONT_SIZE);
@@ -233,11 +232,68 @@ void Render::drawScoreboard(int score, float totalTime, const Ball &b,
     drawIndicator("RAINBOW", Col{220, 180, 255}, b.getPowerTimer());
 }
 
+void Render::drawVisualizer(const Audio &audio) {
+  SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_BLEND);
+
+  const int gridH = ROWS * TILE;
+  const int gridBottom = TOP_MARGIN + gridH;
+  constexpr int kSegs = 8; // gradient segments per bar
+
+  // Lerp two Col values by t in [0,1]
+  auto lerpCol = [](Col a, Col b, float t) -> Col {
+    return {(uint8_t)((int)a.r + (int)(t * ((int)b.r - (int)a.r))),
+            (uint8_t)((int)a.g + (int)(t * ((int)b.g - (int)a.g))),
+            (uint8_t)((int)a.b + (int)(t * ((int)b.b - (int)a.b)))};
+  };
+
+  for (int col = 0; col < Audio::NUM_VIS_BANDS; col++) {
+    float band = audio.getVisBand(col);
+    if (band < 0.002f)
+      continue;
+
+    int barH = (int)(band * gridH);
+    int x = col * TILE + 1;
+    int w = TILE - 2;
+
+    // kSegs stacked rects: t=0 at bottom (BarLow/orange), t=1 at top
+    // (BarHigh/pink). Both sY and sH derive from the same integer pixel edges
+    // so segments tile gap-free.
+    for (int seg = 0; seg < kSegs; seg++) {
+      float t0 = (float)seg / kSegs;
+      float t1 = (float)(seg + 1) / kSegs;
+      float tMid = (t0 + t1) * 0.5f;
+
+      Col c = lerpCol(VisPal::BarLow, VisPal::BarHigh, tMid);
+      int pixBot =
+          (int)(t0 * barH); // pixels from gridBottom for segment bottom
+      int pixTop = (int)(t1 * barH); // pixels from gridBottom for segment top
+      int sH = pixTop - pixBot;
+      if (sH <= 0)
+        continue;
+      int sY = gridBottom - pixTop;
+
+      SDL_SetRenderDrawColor(r_, c.r, c.g, c.b, 200);
+      SDL_Rect rc = {x, sY, w, sH};
+      SDL_RenderFillRect(r_, &rc);
+    }
+
+    // Peak line at bar top
+    int yTop = gridBottom - barH;
+    SDL_SetRenderDrawColor(r_, VisPal::BarPeak.r, VisPal::BarPeak.g,
+                           VisPal::BarPeak.b, 240);
+    SDL_RenderDrawLine(r_, x, yTop, x + w - 1, yTop);
+    if (yTop + 1 < gridBottom) {
+      SDL_SetRenderDrawColor(r_, VisPal::BarPeak.r, VisPal::BarPeak.g,
+                             VisPal::BarPeak.b, 110);
+      SDL_RenderDrawLine(r_, x, yTop + 1, x + w - 1, yTop + 1);
+    }
+  }
+
+  SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_NONE);
+}
+
 void Render::drawGrid(const Map &map) {
   float time = map.getTotalTime();
-
-  setCol(Pal::Floor);
-  fillRect(r_, 0, TOP_MARGIN, WIN_W, ROWS * TILE);
 
   for (int row = 0; row < ROWS; row++) {
     for (int col = 0; col < COLS; col++) {
@@ -246,6 +302,12 @@ void Render::drawGrid(const Map &map) {
       SDL_Rect rc = map.cellRect(row, col);
 
       if (cell == BrickColor::EMPTY && type == BrickType::NORMAL) {
+        // Semi-transparent dark fill so visualizer glows through empty cells
+        SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(r_, Pal::Floor.r, Pal::Floor.g, Pal::Floor.b,
+                               80);
+        SDL_RenderFillRect(r_, &rc);
+        SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_NONE);
         setCol(Pal::WallShade);
         SDL_RenderDrawRect(r_, &rc);
         continue;
@@ -255,8 +317,11 @@ void Render::drawGrid(const Map &map) {
                      ? SpecialPal::Base
                      : BrickPal::Colors[static_cast<int>(cell)];
 
-      setCol(base);
+      // Semi-transparent brick fill — visualizer tints faintly through bricks
+      SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_BLEND);
+      SDL_SetRenderDrawColor(r_, base.r, base.g, base.b, 200);
       SDL_RenderFillRect(r_, &rc);
+      SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_NONE);
 
       setCol(lighter(base, 70));
       fillRect(r_, rc.x + 2, rc.y + 2, rc.w - 4, 3);
@@ -325,12 +390,12 @@ void Render::drawPaddle(const Paddle &p) {
   float vx = p.getVX(), vy = p.getVY();
   float speed = sqrtf(vx * vx + vy * vy);
   if (speed > 1.f) {
-    float norm  = speed / PADDLE_X_SPEED;           // 0..1 (diagonal slightly > 1)
-    float t     = std::min(norm, 1.f);
-    int   shift = (int)(t * 12.f);                  // max 12 px ghost separation
+    float norm = speed / PADDLE_X_SPEED; // 0..1 (diagonal slightly > 1)
+    float t = std::min(norm, 1.f);
+    int shift = (int)(t * 12.f); // max 12 px ghost separation
 
     float nx = vx / speed, ny = vy / speed;
-    int   ox = (int)(nx * shift), oy = (int)(ny * shift);
+    int ox = (int)(nx * shift), oy = (int)(ny * shift);
 
     SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_BLEND);
 

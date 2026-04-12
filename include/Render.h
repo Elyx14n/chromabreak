@@ -7,6 +7,7 @@
 class Map;
 class Paddle;
 class Ball;
+class Audio;
 
 class Render {
 public:
@@ -16,6 +17,7 @@ public:
   Render(const Render &) = delete;
   Render &operator=(const Render &) = delete;
 
+  void drawVisualizer(const Audio &audio);
   void drawGrid(const Map &map);
   void drawPaddle(const Paddle &p);
   void drawBall(const Ball &b, float time);

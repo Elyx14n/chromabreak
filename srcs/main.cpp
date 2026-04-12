@@ -90,14 +90,16 @@ int main(int, char *[]) {
       if (gameOver) {
         audio.playSound(SFXLib::Menu);
         audio.stopMusic();
-        state = GameState::GAME_OVER;      
+        state = GameState::GAME_OVER;
 			}
     }
+    audio.updateVisBands(dt);
 
     SDL_SetRenderDrawColor(r, Pal::Outside.r, Pal::Outside.g, Pal::Outside.b,
                            255);
     SDL_RenderClear(r);
 
+    render.drawVisualizer(audio);
     render.drawGrid(map);
     render.drawParticles(particles);
     render.drawPaddle(paddle);

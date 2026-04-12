@@ -86,6 +86,13 @@ constexpr Col Colors[static_cast<int>(BrickColor::COLOR_COUNT)] = {
 };
 }
 
+// Audio visualizer colors
+namespace VisPal {
+constexpr Col BarLow  = {255, 110,   0};  // neon orange  (bar bottom)
+constexpr Col BarHigh = {255,  20, 180};  // neon pink    (bar top)
+constexpr Col BarPeak = {255, 215, 245};  // near-white pink (peak line)
+} // namespace VisPal
+
 // Special-brick colors
 namespace SpecialPal {
 constexpr Col Base = {240, 245, 255};       // Platinum

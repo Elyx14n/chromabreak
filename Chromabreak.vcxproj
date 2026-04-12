@@ -36,6 +36,9 @@
     <ClInclude Include="include\Particles.h" />
     <ClInclude Include="include\Render.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="context.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
