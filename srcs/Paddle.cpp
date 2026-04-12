@@ -15,7 +15,8 @@ void Paddle::update(float dt, const uint8_t *keys) {
     y_ += PADDLE_Y_SPEED * dt;
 
   x_ = SDL_clamp(x_, PADDLE_W / 2.f, WIN_W - PADDLE_W / 2.f);
-  y_ = SDL_clamp(y_, PADDLE_MIN_Y + PADDLE_H / 2.f, PADDLE_MAX_Y - PADDLE_H / 2.f);
+  y_ = SDL_clamp(y_, PADDLE_MIN_Y + PADDLE_H / 2.f,
+                 PADDLE_MAX_Y - PADDLE_H / 2.f);
 }
 
 SDL_Rect Paddle::rect() const {

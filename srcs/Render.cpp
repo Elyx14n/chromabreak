@@ -9,10 +9,11 @@
 #include <sstream>
 #include <string>
 
-// ── file-local helpers ────────────────────────────────────────────────────────
+// ── file-local helpers
+// ────────────────────────────────────────────────────────
 
-static void renderText(SDL_Renderer *r, TTF_Font *font, const char *text,
-                       int x, int y, SDL_Color color, bool rightAlign = false) {
+static void renderText(SDL_Renderer *r, TTF_Font *font, const char *text, int x,
+                       int y, SDL_Color color, bool rightAlign = false) {
   if (!font)
     return;
   SDL_Surface *surf = TTF_RenderText_Blended(font, text, color);
@@ -55,28 +56,38 @@ static Col hueToRgb(float hue) {
   hue = fmodf(hue, 6.f);
   if (hue < 0.f)
     hue += 6.f;
-  int     hi = (int)hue;
-  float   f  = hue - (float)hi;
-  uint8_t p  = 0;
-  uint8_t q  = (uint8_t)((1.f - f) * 255.f);
-  uint8_t t  = (uint8_t)(f * 255.f);
+  int hi = (int)hue;
+  float f = hue - (float)hi;
+  uint8_t p = 0;
+  uint8_t q = (uint8_t)((1.f - f) * 255.f);
+  uint8_t t = (uint8_t)(f * 255.f);
   switch (hi % 6) {
-  case 0:  return {255, t,   p};
-  case 1:  return {q,   255, p};
-  case 2:  return {p,   255, t};
-  case 3:  return {p,   q,   255};
-  case 4:  return {t,   p,   255};
-  default: return {255, p,   q};
+  case 0:
+    return {255, t, p};
+  case 1:
+    return {q, 255, p};
+  case 2:
+    return {p, 255, t};
+  case 3:
+    return {p, q, 255};
+  case 4:
+    return {t, p, 255};
+  default:
+    return {255, p, q};
   }
 }
 
 static std::string formatScore(int score) {
-  struct Suffix { double threshold; const char *symbol; };
+  struct Suffix {
+    double threshold;
+    const char *symbol;
+  };
   static const Suffix suffixes[] = {{1e12, "T"}, {1e9, "B"}, {1e6, "M"}};
   for (const auto &s : suffixes) {
     if (abs(score) >= s.threshold) {
       std::stringstream ss;
-      ss << std::fixed << std::setprecision(1) << (score / s.threshold) << s.symbol;
+      ss << std::fixed << std::setprecision(1) << (score / s.threshold)
+         << s.symbol;
       return ss.str();
     }
   }
@@ -88,16 +99,16 @@ static std::string formatScore(int score) {
 
 static void drawSpecialBrickIconBackground(SDL_Renderer *r, SDL_Rect rc,
                                            BrickColor color) {
-  const int inset  = 10;
-  SDL_Rect  smallRc = {rc.x + inset, rc.y + inset,
-                        rc.w - (inset * 2), rc.h - (inset * 2)};
+  const int inset = 10;
+  SDL_Rect smallRc = {rc.x + inset, rc.y + inset, rc.w - (inset * 2),
+                      rc.h - (inset * 2)};
   const Col &bg = BrickPal::Colors[static_cast<int>(color)];
   SDL_SetRenderDrawColor(r, bg.r, bg.g, bg.b, 255);
   SDL_RenderFillRect(r, &smallRc);
 }
 
-static void drawSpecialBrickIcon(SDL_Renderer *r, BrickType type,
-                                 SDL_Rect rc, BrickColor color) {
+static void drawSpecialBrickIcon(SDL_Renderer *r, BrickType type, SDL_Rect rc,
+                                 BrickColor color) {
   if (type != BrickType::RAINBOW && type != BrickType::REVERSER)
     drawSpecialBrickIconBackground(r, rc, color);
 
@@ -116,21 +127,22 @@ static void drawSpecialBrickIcon(SDL_Renderer *r, BrickType type,
   }
   case BrickType::TRANSFORMER: {
     SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
-    SDL_RenderDrawLine(r, cx,     cy - 7, cx + 7, cy);
-    SDL_RenderDrawLine(r, cx + 7, cy,     cx,     cy + 7);
-    SDL_RenderDrawLine(r, cx,     cy + 7, cx - 7, cy);
-    SDL_RenderDrawLine(r, cx - 7, cy,     cx,     cy - 7);
-    SDL_RenderDrawLine(r, cx,     cy - 3, cx + 3, cy);
-    SDL_RenderDrawLine(r, cx + 3, cy,     cx,     cy + 3);
-    SDL_RenderDrawLine(r, cx,     cy + 3, cx - 3, cy);
-    SDL_RenderDrawLine(r, cx - 3, cy,     cx,     cy - 3);
+    SDL_RenderDrawLine(r, cx, cy - 7, cx + 7, cy);
+    SDL_RenderDrawLine(r, cx + 7, cy, cx, cy + 7);
+    SDL_RenderDrawLine(r, cx, cy + 7, cx - 7, cy);
+    SDL_RenderDrawLine(r, cx - 7, cy, cx, cy - 7);
+    SDL_RenderDrawLine(r, cx, cy - 3, cx + 3, cy);
+    SDL_RenderDrawLine(r, cx + 3, cy, cx, cy + 3);
+    SDL_RenderDrawLine(r, cx, cy + 3, cx - 3, cy);
+    SDL_RenderDrawLine(r, cx - 3, cy, cx, cy - 3);
     break;
   }
   case BrickType::RAINBOW: {
     for (int i = 1; i < static_cast<int>(BrickColor::COLOR_COUNT); i++) {
-      int        sy          = cy - 3 + (i - 1);
+      int sy = cy - 3 + (i - 1);
       const Col &stripeColor = BrickPal::Colors[i];
-      SDL_SetRenderDrawColor(r, stripeColor.r, stripeColor.g, stripeColor.b, 255);
+      SDL_SetRenderDrawColor(r, stripeColor.r, stripeColor.g, stripeColor.b,
+                             255);
       SDL_RenderDrawLine(r, cx - 9, sy, cx + 9, sy);
     }
     break;
@@ -156,7 +168,8 @@ static void drawSpecialBrickIcon(SDL_Renderer *r, BrickType type,
   }
 }
 
-// ── Render members ────────────────────────────────────────────────────────────
+// ── Render members
+// ────────────────────────────────────────────────────────────
 
 Render::Render(SDL_Renderer *r) : r_(r), font_(nullptr) {
   font_ = TTF_OpenFont(FONT_PATH, FONT_SIZE);
@@ -164,9 +177,7 @@ Render::Render(SDL_Renderer *r) : r_(r), font_(nullptr) {
     SDL_Log("TTF_OpenFont failed: %s", TTF_GetError());
 }
 
-Render::~Render() {
-  TTF_CloseFont(font_);
-}
+Render::~Render() { TTF_CloseFont(font_); }
 
 void Render::setCol(Col c, uint8_t a) {
   SDL_SetRenderDrawColor(r_, c.r, c.g, c.b, a);
@@ -183,9 +194,9 @@ void Render::drawScoreboard(int score, float totalTime, const Ball &b,
   if (!font_)
     return;
 
-  const int       midY  = TOP_MARGIN / 2;
+  const int midY = TOP_MARGIN / 2;
   const SDL_Color white = {220, 220, 220, 255};
-  const SDL_Color dim   = {140, 140, 140, 255};
+  const SDL_Color dim = {140, 140, 140, 255};
 
   std::string scoreStr = formatScore(score);
   renderText(r_, font_, "SCORE", 14, midY, dim);
@@ -193,7 +204,7 @@ void Render::drawScoreboard(int score, float totalTime, const Ball &b,
   TTF_SizeText(font_, "SCORE", &labelW, &labelH);
   renderText(r_, font_, scoreStr.c_str(), 14 + labelW + 10, midY, white);
 
-  int  secs = (int)totalTime;
+  int secs = (int)totalTime;
   char timeBuf[8];
   SDL_snprintf(timeBuf, sizeof(timeBuf), "%02d:%02d", secs / 60, secs % 60);
   int tw = 0, th = 0;
@@ -201,18 +212,18 @@ void Render::drawScoreboard(int score, float totalTime, const Ball &b,
   renderText(r_, font_, timeBuf, WIN_W / 2 - tw / 2, midY, white);
 
   const int rightPadding = 14;
-  int       indicatorX   = WIN_W - rightPadding;
+  int indicatorX = WIN_W - rightPadding;
 
   auto drawIndicator = [&](const char *label, Col pcol, float timer) {
     SDL_Color psdl = {pcol.r, pcol.g, pcol.b, 255};
-    char      pbuf[24];
+    char pbuf[24];
     SDL_snprintf(pbuf, sizeof(pbuf), "%s %ds", label, (int)timer + 1);
     int pw = 0, ph = 0;
     TTF_SizeText(font_, pbuf, &pw, &ph);
     int textX = indicatorX - pw;
     renderText(r_, font_, pbuf, textX, midY, psdl);
     float frac = timer / POWER_DURATION;
-    int   barW = (int)(pw * frac);
+    int barW = (int)(pw * frac);
     SDL_SetRenderDrawColor(r_, pcol.r, pcol.g, pcol.b, 160);
     fillRect(r_, textX, midY + ph / 2 + 2, barW, 3);
     indicatorX = textX - 12;
@@ -233,8 +244,8 @@ void Render::drawGrid(const Map &map) {
   for (int row = 0; row < ROWS; row++) {
     for (int col = 0; col < COLS; col++) {
       BrickColor cell = map.colorAt(row, col);
-      BrickType  type = map.typeAt(row, col);
-      SDL_Rect   rc   = map.cellRect(row, col);
+      BrickType type = map.typeAt(row, col);
+      SDL_Rect rc = map.cellRect(row, col);
 
       if (cell == BrickColor::EMPTY && type == BrickType::NORMAL) {
         setCol(Pal::WallShade);
@@ -250,21 +261,31 @@ void Render::drawGrid(const Map &map) {
       SDL_RenderFillRect(r_, &rc);
 
       setCol(lighter(base, 70));
-      fillRect(r_, rc.x + 2,        rc.y + 2,        rc.w - 4, 3);
-      fillRect(r_, rc.x + 2,        rc.y + 2,        3,        rc.h - 4);
+      fillRect(r_, rc.x + 2, rc.y + 2, rc.w - 4, 3);
+      fillRect(r_, rc.x + 2, rc.y + 2, 3, rc.h - 4);
 
       setCol(darker(base, 60));
-      fillRect(r_, rc.x + 2,        rc.y + rc.h - 5, rc.w - 4, 3);
-      fillRect(r_, rc.x + rc.w - 5, rc.y + 2,        3,        rc.h - 4);
+      fillRect(r_, rc.x + 2, rc.y + rc.h - 5, rc.w - 4, 3);
+      fillRect(r_, rc.x + rc.w - 5, rc.y + 2, 3, rc.h - 4);
 
       if (type != BrickType::NORMAL) {
         Col borderCol;
         switch (type) {
-        case BrickType::BOMB:        borderCol = SpecialPal::Bomb;        break;
-        case BrickType::TRANSFORMER: borderCol = SpecialPal::Transformer; break;
-        case BrickType::RAINBOW:     borderCol = SpecialPal::Rainbow;     break;
-        case BrickType::REVERSER:    borderCol = SpecialPal::Reverser;    break;
-        default:                     borderCol = Pal::WallShade;          break;
+        case BrickType::BOMB:
+          borderCol = SpecialPal::Bomb;
+          break;
+        case BrickType::TRANSFORMER:
+          borderCol = SpecialPal::Transformer;
+          break;
+        case BrickType::RAINBOW:
+          borderCol = SpecialPal::Rainbow;
+          break;
+        case BrickType::REVERSER:
+          borderCol = SpecialPal::Reverser;
+          break;
+        default:
+          borderCol = Pal::WallShade;
+          break;
         }
         setCol(borderCol);
         SDL_RenderDrawRect(r_, &rc);
@@ -277,8 +298,8 @@ void Render::drawGrid(const Map &map) {
         float sweep = phase * 2.4f - 0.7f;
         if (sweep > 0.f && sweep < 1.f) {
           SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_BLEND);
-          int     stripCx = rc.x + (int)(sweep * rc.w);
-          uint8_t alpha   = (uint8_t)(sinf(sweep * 3.14159f) * 140.f);
+          int stripCx = rc.x + (int)(sweep * rc.w);
+          uint8_t alpha = (uint8_t)(sinf(sweep * 3.14159f) * 140.f);
           SDL_SetRenderDrawColor(r_, 255, 255, 255, alpha);
           for (int dx = -4; dx <= 4; dx++) {
             int sx = stripCx + dx;
@@ -305,7 +326,7 @@ void Render::drawPaddle(const Paddle &p) {
   SDL_RenderFillRect(r_, &rc);
 
   setCol(Pal::PaddleHi);
-  fillRect(r_, rc.x + 3, rc.y + 2,        rc.w - 6, 3);
+  fillRect(r_, rc.x + 3, rc.y + 2, rc.w - 6, 3);
 
   setCol(Pal::PaddleShade);
   fillRect(r_, rc.x + 3, rc.y + rc.h - 5, rc.w - 6, 3);
@@ -328,9 +349,7 @@ void Render::drawBall(const Ball &b, float time) {
   filledCircle(r_, (int)b.getX() - 2, (int)b.getY() - 3, BALL_R / 3);
 }
 
-void Render::drawParticles(const ParticleSystem &ps) {
-  ps.draw(r_);
-}
+void Render::drawParticles(const ParticleSystem &ps) { ps.draw(r_); }
 
 void Render::drawGameOver() {
   SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_BLEND);
@@ -342,7 +361,7 @@ void Render::drawGameOver() {
   if (!font_)
     return;
 
-  SDL_Color textColor    = {255, 80,  80,  255};
+  SDL_Color textColor = {255, 80, 80, 255};
   SDL_Color subTextColor = {200, 200, 200, 255};
 
   SDL_Surface *surfMain = TTF_RenderText_Blended(font_, "GAME OVER", textColor);
@@ -362,8 +381,7 @@ void Render::drawGameOver() {
   if (!surfSub)
     return;
   SDL_Texture *texSub = SDL_CreateTextureFromSurface(r_, surfSub);
-  SDL_Rect subRect = {(WIN_W - surfSub->w) / 2,
-                      mainRect.y + mainRect.h + 20,
+  SDL_Rect subRect = {(WIN_W - surfSub->w) / 2, mainRect.y + mainRect.h + 20,
                       surfSub->w, surfSub->h};
   SDL_FreeSurface(surfSub);
   if (texSub) {

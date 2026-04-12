@@ -11,12 +11,12 @@ static bool rectsOverlap(const SDL_Rect &a, const SDL_Rect &b) {
 }
 
 Ball::Ball() {
-  x_          = WIN_W / 2.f;
-  y_          = PADDLE_MIN_Y + BOTTOM_MARGIN * 0.35f;
-  vx_         = BALL_SPEED * 0.55f;
-  vy_         = -BALL_SPEED * 0.835f;
-  color_      = BrickColor::RED;
-  power_      = BallPower::NONE;
+  x_ = WIN_W / 2.f;
+  y_ = PADDLE_MIN_Y + BOTTOM_MARGIN * 0.35f;
+  vx_ = BALL_SPEED * 0.55f;
+  vy_ = -BALL_SPEED * 0.835f;
+  color_ = BrickColor::RED;
+  power_ = BallPower::NONE;
   powerTimer_ = 0.f;
 }
 
@@ -38,7 +38,7 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
   if (power_ != BallPower::NONE) {
     powerTimer_ -= dt;
     if (powerTimer_ <= 0.f) {
-      power_      = BallPower::NONE;
+      power_ = BallPower::NONE;
       powerTimer_ = 0.f;
     }
   }
@@ -46,16 +46,28 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
   Col trailCol;
   if (power_ == BallPower::RAINBOW) {
     float hue = fmodf((POWER_DURATION - powerTimer_) * 2.5f, 6.f);
-    int   hi  = (int)hue;
-    float f   = hue - (float)hi;
+    int hi = (int)hue;
+    float f = hue - (float)hi;
     uint8_t t = (uint8_t)(f * 255.f), q = (uint8_t)((1.f - f) * 255.f);
     switch (hi % 6) {
-    case 0:  trailCol = {255, t,   0};   break;
-    case 1:  trailCol = {q,   255, 0};   break;
-    case 2:  trailCol = {0,   255, t};   break;
-    case 3:  trailCol = {0,   q,   255}; break;
-    case 4:  trailCol = {t,   0,   255}; break;
-    default: trailCol = {255, 0,   q};   break;
+    case 0:
+      trailCol = {255, t, 0};
+      break;
+    case 1:
+      trailCol = {q, 255, 0};
+      break;
+    case 2:
+      trailCol = {0, 255, t};
+      break;
+    case 3:
+      trailCol = {0, q, 255};
+      break;
+    case 4:
+      trailCol = {t, 0, 255};
+      break;
+    default:
+      trailCol = {255, 0, q};
+      break;
     }
   } else {
     trailCol = BrickPal::Colors[static_cast<int>(color_)];
@@ -66,15 +78,15 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
   y_ += vy_ * dt;
 
   if (x_ - BALL_R < 0) {
-    x_  = (float)BALL_R;
+    x_ = (float)BALL_R;
     vx_ = fabsf(vx_);
   }
   if (x_ + BALL_R > WIN_W) {
-    x_  = WIN_W - (float)BALL_R;
+    x_ = WIN_W - (float)BALL_R;
     vx_ = -fabsf(vx_);
   }
   if (y_ - BALL_R < TOP_MARGIN) {
-    y_  = TOP_MARGIN + (float)BALL_R;
+    y_ = TOP_MARGIN + (float)BALL_R;
     vy_ = fabsf(vy_);
   }
 
@@ -86,11 +98,12 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
   // Paddle bounce
   SDL_Rect pr = paddle.rect();
   if (vy_ > 0.f && rectsOverlap(rect(), pr)) {
-    y_        = (float)(pr.y - BALL_R);
-    float rel = std::max(-1.f, std::min(1.f, (x_ - paddle.getX()) / (PADDLE_W * 0.5f)));
-    vx_       = rel * BALL_SPEED * 0.85f;
+    y_ = (float)(pr.y - BALL_R);
+    float rel =
+        std::max(-1.f, std::min(1.f, (x_ - paddle.getX()) / (PADDLE_W * 0.5f)));
+    vx_ = rel * BALL_SPEED * 0.85f;
     float minVy = BALL_SPEED * 0.35f;
-    float vy2   = BALL_SPEED * BALL_SPEED - vx_ * vx_;
+    float vy2 = BALL_SPEED * BALL_SPEED - vx_ * vx_;
     vy_ = -sqrtf(vy2 > minVy * minVy ? vy2 : minVy * minVy);
     return;
   }
@@ -101,7 +114,7 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
       if (map.colorAt(r, c) == BrickColor::EMPTY)
         continue;
 
-      SDL_Rect br   = rect();
+      SDL_Rect br = rect();
       SDL_Rect cell = map.cellRect(r, c);
       if (!rectsOverlap(br, cell))
         continue;
@@ -109,11 +122,11 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
       int ox = std::min(br.x + br.w, cell.x + cell.w) - std::max(br.x, cell.x);
       int oy = std::min(br.y + br.h, cell.y + cell.h) - std::max(br.y, cell.y);
 
-      BrickType  bt      = map.typeAt(r, c);
-      BrickColor bc      = map.colorAt(r, c);
-      float      cx      = cell.x + cell.w * 0.5f;
-      float      cy      = cell.y + cell.h * 0.5f;
-      Col        brickCol = BrickPal::Colors[static_cast<int>(bc)];
+      BrickType bt = map.typeAt(r, c);
+      BrickColor bc = map.colorAt(r, c);
+      float cx = cell.x + cell.w * 0.5f;
+      float cy = cell.y + cell.h * 0.5f;
+      Col brickCol = BrickPal::Colors[static_cast<int>(bc)];
 
       bool brickDestroyed = true;
 
@@ -124,7 +137,7 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
         map.transformerEffect(r, c, bc, score, ps);
 
       } else if (bt == BrickType::RAINBOW) {
-        power_      = BallPower::RAINBOW;
+        power_ = BallPower::RAINBOW;
         powerTimer_ = POWER_DURATION;
         map.clearCell(r, c);
         score += BASE_SCORE;
@@ -147,19 +160,19 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
       // Physical separation and direction-safe velocity flip
       if (ox <= oy) {
         if (x_ < cell.x + cell.w * 0.5f) {
-          x_  -= ox;
-          vx_  = -fabsf(vx_);
+          x_ -= ox;
+          vx_ = -fabsf(vx_);
         } else {
-          x_  += ox;
-          vx_  = fabsf(vx_);
+          x_ += ox;
+          vx_ = fabsf(vx_);
         }
       } else {
         if (y_ < cell.y + cell.h * 0.5f) {
-          y_  -= oy;
-          vy_  = -fabsf(vy_);
+          y_ -= oy;
+          vy_ = -fabsf(vy_);
         } else {
-          y_  += oy;
-          vy_  = fabsf(vy_);
+          y_ += oy;
+          vy_ = fabsf(vy_);
         }
       }
       return;

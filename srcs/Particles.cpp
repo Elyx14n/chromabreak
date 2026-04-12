@@ -10,19 +10,19 @@ static void driftedColor(Col base, float life, float amp, uint8_t &or_,
                          uint8_t &og, uint8_t &ob) {
   float t = (1.f - life) * 6.2832f;
   or_ = (uint8_t)SDL_clamp((int)base.r + (int)(sinf(t + 0.000f) * amp), 0, 255);
-  og  = (uint8_t)SDL_clamp((int)base.g + (int)(sinf(t + 2.094f) * amp), 0, 255);
-  ob  = (uint8_t)SDL_clamp((int)base.b + (int)(sinf(t + 4.189f) * amp), 0, 255);
+  og = (uint8_t)SDL_clamp((int)base.g + (int)(sinf(t + 2.094f) * amp), 0, 255);
+  ob = (uint8_t)SDL_clamp((int)base.b + (int)(sinf(t + 4.189f) * amp), 0, 255);
 }
 
-static void hotColor(uint8_t r, uint8_t g, uint8_t b,
-                     uint8_t &or_, uint8_t &og, uint8_t &ob) {
+static void hotColor(uint8_t r, uint8_t g, uint8_t b, uint8_t &or_, uint8_t &og,
+                     uint8_t &ob) {
   or_ = (uint8_t)std::min(255, (int)r + 100);
-  og  = (uint8_t)std::min(255, (int)g + 100);
-  ob  = (uint8_t)std::min(255, (int)b + 100);
+  og = (uint8_t)std::min(255, (int)g + 100);
+  ob = (uint8_t)std::min(255, (int)b + 100);
 }
 
-static void glowOrb(SDL_Renderer *r, int cx, int cy, int rad,
-                    uint8_t cr, uint8_t cg, uint8_t cb, uint8_t alpha) {
+static void glowOrb(SDL_Renderer *r, int cx, int cy, int rad, uint8_t cr,
+                    uint8_t cg, uint8_t cb, uint8_t alpha) {
   if (rad < 1 || alpha == 0)
     return;
 
@@ -39,7 +39,7 @@ static void glowOrb(SDL_Renderer *r, int cx, int cy, int rad,
   circle(rad + 5, (uint8_t)(alpha * 0.07f));
   circle(rad + 3, (uint8_t)(alpha * 0.14f));
   circle(rad + 1, (uint8_t)(alpha * 0.28f));
-  circle(rad,     alpha);
+  circle(rad, alpha);
 
   uint8_t hr, hg, hb;
   hotColor(cr, cg, cb, hr, hg, hb);
@@ -51,8 +51,8 @@ static void glowOrb(SDL_Renderer *r, int cx, int cy, int rad,
   }
 }
 
-static void glowRing(SDL_Renderer *r, int cx, int cy, int radius,
-                     uint8_t cr, uint8_t cg, uint8_t cb, uint8_t alpha) {
+static void glowRing(SDL_Renderer *r, int cx, int cy, int radius, uint8_t cr,
+                     uint8_t cg, uint8_t cb, uint8_t alpha) {
   auto bresenham = [&](int rad, uint8_t a) {
     if (rad <= 0 || a == 0)
       return;
@@ -75,18 +75,19 @@ static void glowRing(SDL_Renderer *r, int cx, int cy, int radius,
   bresenham(radius + 4, (uint8_t)(alpha * 0.08f));
   bresenham(radius + 2, (uint8_t)(alpha * 0.18f));
   bresenham(radius + 1, (uint8_t)(alpha * 0.35f));
-  bresenham(radius,     alpha);
+  bresenham(radius, alpha);
   bresenham(radius - 2, (uint8_t)(alpha * 0.50f));
   bresenham(radius - 4, (uint8_t)(alpha * 0.30f));
   bresenham(radius - 6, (uint8_t)(alpha * 0.12f));
 }
 
 void ParticleSystem::reset() {
-  count_     = 0;
+  count_ = 0;
   ringCount_ = 0;
 }
 
-void ParticleSystem::spawnTrail(float x, float y, float vx, float vy, Col color) {
+void ParticleSystem::spawnTrail(float x, float y, float vx, float vy,
+                                Col color) {
   float speed = sqrtf(vx * vx + vy * vy);
   float nx = (speed > 1.f) ? vx / speed : 1.f;
   float ny = (speed > 1.f) ? vy / speed : 0.f;
@@ -102,30 +103,30 @@ void ParticleSystem::spawnTrail(float x, float y, float vx, float vy, Col color)
     p.vx = -nx * (2.f + randf() * 4.f);
     p.vy = -ny * (2.f + randf() * 4.f);
 
-    p.life  = 0.55f + randf() * 0.30f;
-    p.decay = 1.5f  + randf() * 1.0f;
-    p.color  = color;
+    p.life = 0.55f + randf() * 0.30f;
+    p.decay = 1.5f + randf() * 1.0f;
+    p.color = color;
     p.radius = 2 + (int)(randf() * 2.f);
     p.rgbDrift = 55.f + randf() * 40.f;
 
-    p.perpX    = px;
-    p.perpY    = py;
-    p.waveAmp  = 3.f + randf() * 4.f;
+    p.perpX = px;
+    p.perpY = py;
+    p.waveAmp = 3.f + randf() * 4.f;
     p.wavePhase = randf() * 6.2832f;
-    p.isTrail  = true;
+    p.isTrail = true;
   }
 }
 
 void ParticleSystem::spawnBurst(float x, float y, Col color, int n) {
   if (ringCount_ < MAX_RINGS) {
     BlastRing &ring = rings_[ringCount_++];
-    ring.x         = x;
-    ring.y         = y;
-    ring.life      = 1.f;
-    ring.decay     = 1.8f;
-    ring.radius    = 0.f;
+    ring.x = x;
+    ring.y = y;
+    ring.life = 1.f;
+    ring.decay = 1.8f;
+    ring.radius = 0.f;
     ring.maxRadius = 80.f + randf() * 50.f;
-    ring.color     = color;
+    ring.color = color;
   }
 
   for (int i = 0; i < n && count_ < MAX; i++) {
@@ -135,21 +136,21 @@ void ParticleSystem::spawnBurst(float x, float y, Col color, int n) {
     p.y = y + (randf() - 0.5f) * 8.f;
 
     float angle = (float)i / (float)n * 6.2832f + randf() * 0.5f;
-    float spd   = 120.f + randf() * 220.f;
+    float spd = 120.f + randf() * 220.f;
     p.vx = cosf(angle) * spd;
     p.vy = sinf(angle) * spd;
 
-    p.life  = 0.85f + randf() * 0.35f;
-    p.decay = 1.0f  + randf() * 0.9f;
-    p.color  = color;
+    p.life = 0.85f + randf() * 0.35f;
+    p.decay = 1.0f + randf() * 0.9f;
+    p.color = color;
     p.radius = 6 + (int)(randf() * 5.f);
     p.rgbDrift = 45.f + randf() * 45.f;
 
-    p.perpX    = -sinf(angle);
-    p.perpY    =  cosf(angle);
-    p.waveAmp  = 9.f + randf() * 10.f;
+    p.perpX = -sinf(angle);
+    p.perpY = cosf(angle);
+    p.waveAmp = 9.f + randf() * 10.f;
     p.wavePhase = randf() * 6.2832f;
-    p.isTrail  = false;
+    p.isTrail = false;
   }
 }
 
@@ -169,8 +170,8 @@ void ParticleSystem::update(float dt) {
 
   for (int i = 0; i < ringCount_;) {
     BlastRing &ring = rings_[i];
-    ring.life   -= ring.decay * dt;
-    ring.radius  = ring.maxRadius * (1.f - ring.life);
+    ring.life -= ring.decay * dt;
+    ring.radius = ring.maxRadius * (1.f - ring.life);
     if (ring.life <= 0.f)
       rings_[i] = rings_[--ringCount_];
     else
@@ -195,7 +196,8 @@ void ParticleSystem::draw(SDL_Renderer *r) const {
     uint8_t cr, cg, cb;
     driftedColor(p.color, p.life, p.rgbDrift, cr, cg, cb);
 
-    float waveDisp = sinf(p.wavePhase + (1.f - p.life) * 9.f) * p.waveAmp * p.life;
+    float waveDisp =
+        sinf(p.wavePhase + (1.f - p.life) * 9.f) * p.waveAmp * p.life;
     int cx = (int)(p.x + p.perpX * waveDisp);
     int cy = (int)(p.y + p.perpY * waveDisp);
 
