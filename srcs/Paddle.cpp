@@ -5,6 +5,8 @@
 Paddle::Paddle() : x_(WIN_W / 2.f), y_(PADDLE_Y) {}
 
 void Paddle::update(float dt, const uint8_t *keys) {
+  float prevX = x_, prevY = y_;
+
   if (keys[SDL_SCANCODE_LEFT])
     x_ -= PADDLE_X_SPEED * dt;
   if (keys[SDL_SCANCODE_RIGHT])
@@ -17,6 +19,9 @@ void Paddle::update(float dt, const uint8_t *keys) {
   x_ = SDL_clamp(x_, PADDLE_W / 2.f, WIN_W - PADDLE_W / 2.f);
   y_ = SDL_clamp(y_, PADDLE_MIN_Y + PADDLE_H / 2.f,
                  PADDLE_MAX_Y - PADDLE_H / 2.f);
+
+  vx_ = (dt > 0.f) ? (x_ - prevX) / dt : 0.f;
+  vy_ = (dt > 0.f) ? (y_ - prevY) / dt : 0.f;
 }
 
 SDL_Rect Paddle::rect() const {

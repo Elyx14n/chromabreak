@@ -139,7 +139,7 @@ void Map::reverserEffect(int r, int c, int &score, ParticleSystem &ps) {
 BrickType Map::spawnBrickType(BrickColor bc) const {
   if (rand() % 100 < SPECIAL_BRICK_CHANCE) {
     BrickType bt = static_cast<BrickType>(1 + rand() % 4);
-    if (bt == BrickType::BOMB || bt == BrickType::TRANSFORMER) {
+    if (bt == BrickType::TRANSFORMER) {
       auto hasExistingColorAndType = [this, bc, bt]() -> bool {
         for (int r = 0; r < ROWS; r++)
           for (int c = 0; c < COLS; c++)
@@ -148,10 +148,12 @@ BrickType Map::spawnBrickType(BrickColor bc) const {
         return false;
       };
       if (hasExistingColorAndType()) {
-        int reroll = rand() % 3;
+        int reroll = rand() % 4;
         if (reroll == 0)
+          return BrickType::BOMB;
+        else if (reroll == 1)
           return BrickType::REVERSER;
-        if (reroll == 1)
+        else if (reroll == 2)
           return BrickType::RAINBOW;
         return BrickType::NORMAL;
       }
@@ -186,13 +188,17 @@ void Map::spawnRow(BrickColor *out, BrickType *outTypes) const {
       if (bt != BrickType::NORMAL) {
         int pos = col + i;
         bool adjacent = false;
-        if (pos > 0 && outTypes[pos - 1] != BrickType::NORMAL)
-          adjacent = true;
-        for (int dc = -1; dc <= 1 && !adjacent; dc++) {
+        // Check within a 2-tile radius: the new row being built
+        // (outTypes) and the 2 existing top rows (types_[0], types_[1]).
+        for (int dc = -2; dc <= 2 && !adjacent; dc++) {
           int nc = pos + dc;
-          if (nc >= 0 && nc < COLS && types_[0][nc] != BrickType::NORMAL) {
+          if (nc < 0 || nc >= COLS)
+            continue;
+          if (outTypes[nc] != BrickType::NORMAL)
             adjacent = true;
-            break;
+          for (int dr = 0; dr < 2 && !adjacent; dr++) {
+            if (types_[dr][nc] != BrickType::NORMAL)
+              adjacent = true;
           }
         }
         if (adjacent)

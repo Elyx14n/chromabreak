@@ -320,6 +320,33 @@ void Render::drawGrid(const Map &map) {
 void Render::drawPaddle(const Paddle &p) {
   SDL_Rect rc = p.rect();
 
+  // Phase-shift ghost: two chromatic copies offset along the velocity vector.
+  // The offset scales with speed so it vanishes when the paddle is still.
+  float vx = p.getVX(), vy = p.getVY();
+  float speed = sqrtf(vx * vx + vy * vy);
+  if (speed > 1.f) {
+    float norm  = speed / PADDLE_X_SPEED;           // 0..1 (diagonal slightly > 1)
+    float t     = std::min(norm, 1.f);
+    int   shift = (int)(t * 12.f);                  // max 12 px ghost separation
+
+    float nx = vx / speed, ny = vy / speed;
+    int   ox = (int)(nx * shift), oy = (int)(ny * shift);
+
+    SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_BLEND);
+
+    // Trailing ghost — warm pink, opposite to motion
+    SDL_Rect trail = {rc.x - ox, rc.y - oy, rc.w, rc.h};
+    SDL_SetRenderDrawColor(r_, 255, 60, 160, (uint8_t)(t * 70.f));
+    SDL_RenderFillRect(r_, &trail);
+
+    // Leading ghost — cool cyan, ahead of motion
+    SDL_Rect lead = {rc.x + ox, rc.y + oy, rc.w, rc.h};
+    SDL_SetRenderDrawColor(r_, 60, 220, 255, (uint8_t)(t * 50.f));
+    SDL_RenderFillRect(r_, &lead);
+
+    SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_NONE);
+  }
+
   setCol(Pal::PaddleBase);
   SDL_RenderFillRect(r_, &rc);
 

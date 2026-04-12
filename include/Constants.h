@@ -138,7 +138,7 @@ inline SFX BallColorSwap = {"assets/sfx/ball_color_swap.wav", 50};
 namespace MusicLib {
 inline SFX ForsakenOne = {"assets/music/forsaken_one.ogg", 70};
 inline SFX NeonTwilight = {"assets/music/neon_twilight.ogg", 70};
-inline SFX LosingYou = {"assets/music/losing_you.ogg", 50};
+inline SFX LosingYou = {"assets/music/losing_you.ogg", 40};
 } // namespace MusicLib
 
 enum class GameState { PLAYING, GAME_OVER };
