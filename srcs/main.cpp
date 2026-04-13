@@ -25,6 +25,7 @@ int main(int, char *[]) {
 
   Audio audio;
   if (!audio.ok()) {
+    SDL_Log("SDL_mixer Error: %s", SDL_GetError());
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Initialization Error",
                              "Could not initialize SDL_mixer", nullptr);
     return 1;

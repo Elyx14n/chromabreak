@@ -52,6 +52,16 @@ static Col darker(Col c, int amount) {
           (uint8_t)std::max(0, c.b - amount)};
 }
 
+// Hue ∈ [0, 6) maps to the colour wheel split into 6 sectors of 60° each:
+//   0 Red→Yellow  1 Yellow→Green  2 Green→Cyan  3 Cyan→Blue  4 Blue→Magenta  5
+//   Magenta→Red
+// hi   = which sector,  f = how far through it (0..1).
+// f  = fractional position within the sector (0.0 at entry, 1.0 at exit)
+// t  = tint:   the incoming channel, rising  0→255 across the sector (t =
+// f*255) q  = quench: the outgoing channel, falling 255→0 across the sector (q
+// = (1-f)*255) p  = always 0 — the channel that plays no role in this sector
+// One channel stays at 255, one rises (t), one falls (q), one is zero (p) —
+// three moving parts are all you need to sweep the full spectrum cleanly.
 static Col hueToRgb(float hue) {
   hue = fmodf(hue, 6.f);
   if (hue < 0.f)
@@ -237,13 +247,23 @@ void Render::drawVisualizer(const Audio &audio) {
 
   const int gridH = ROWS * TILE;
   const int gridBottom = TOP_MARGIN + gridH;
-  constexpr int kSegs = 8; // gradient segments per bar
+  constexpr int kSegs = 8;
 
-  // Lerp two Col values by t in [0,1]
-  auto lerpCol = [](Col a, Col b, float t) -> Col {
-    return {(uint8_t)((int)a.r + (int)(t * ((int)b.r - (int)a.r))),
-            (uint8_t)((int)a.g + (int)(t * ((int)b.g - (int)a.g))),
-            (uint8_t)((int)a.b + (int)(t * ((int)b.b - (int)a.b)))};
+  // Linear interpolation blends between two values by a factor t ∈ [0,1]:
+  //     result = A + t × (B − A)
+  // At t=0 you get A exactly, at t=1 you get B exactly, anything in between is
+  // a proportional mix. Here it's applied per channel so the colour transitions
+  // smoothly from BarLow (orange) to BarHigh (pink) as t goes bottom→top.
+  // The int casts are necessary because uint8_t subtraction wraps on underflow
+  auto lerpCol = [&](float t) -> Col {
+    return {
+        (uint8_t)((int)VisPal::BarLow.r +
+                  (int)(t * ((int)VisPal::BarHigh.r - (int)VisPal::BarLow.r))),
+        (uint8_t)((int)VisPal::BarLow.g +
+                  (int)(t * ((int)VisPal::BarHigh.g - (int)VisPal::BarLow.g))),
+        (uint8_t)((int)VisPal::BarLow.b +
+                  (int)(t * ((int)VisPal::BarHigh.b - (int)VisPal::BarLow.b))),
+    };
   };
 
   for (int col = 0; col < Audio::NUM_VIS_BANDS; col++) {
@@ -255,18 +275,19 @@ void Render::drawVisualizer(const Audio &audio) {
     int x = col * TILE + 1;
     int w = TILE - 2;
 
-    // kSegs stacked rects: t=0 at bottom (BarLow/orange), t=1 at top
-    // (BarHigh/pink). Both sY and sH derive from the same integer pixel edges
-    // so segments tile gap-free.
+    // Divide the bar into kSegs stacked rects, each lerped from BarLow
+    // (orange, t=0 at bottom) to BarHigh (pink, t=1 at top).
+    // pixBot and pixTop both use (int)(t * barH), so sY + sH lands exactly
+    // on the next segment's sY. Computing sY and sH independently would floor
+    // them separately and leave 1-px gaps at every transition.
     for (int seg = 0; seg < kSegs; seg++) {
       float t0 = (float)seg / kSegs;
       float t1 = (float)(seg + 1) / kSegs;
       float tMid = (t0 + t1) * 0.5f;
 
-      Col c = lerpCol(VisPal::BarLow, VisPal::BarHigh, tMid);
-      int pixBot =
-          (int)(t0 * barH); // pixels from gridBottom for segment bottom
-      int pixTop = (int)(t1 * barH); // pixels from gridBottom for segment top
+      Col c = lerpCol(tMid);
+      int pixBot = (int)(t0 * barH);
+      int pixTop = (int)(t1 * barH);
       int sH = pixTop - pixBot;
       if (sH <= 0)
         continue;
@@ -302,7 +323,9 @@ void Render::drawGrid(const Map &map) {
       SDL_Rect rc = map.cellRect(row, col);
 
       if (cell == BrickColor::EMPTY && type == BrickType::NORMAL) {
-        // Semi-transparent dark fill so visualizer glows through empty cells
+        // BLEND mode: result = src*srcA + dst*(1-srcA).
+        // At alpha=80 (~31%) this fill is mostly transparent, so the visualizer
+        // bars drawn earlier in drawVisualizer bleed through.
         SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_BLEND);
         SDL_SetRenderDrawColor(r_, Pal::Floor.r, Pal::Floor.g, Pal::Floor.b,
                                80);
@@ -314,7 +337,9 @@ void Render::drawGrid(const Map &map) {
                      ? SpecialPal::Base
                      : BrickPal::Colors[static_cast<int>(cell)];
 
-      // Semi-transparent brick fill — visualizer tints faintly through bricks
+      // alpha=200 lets a little visualizer colour tint through the brick face.
+      // BLENDMODE_NONE below restores full-overwrite for the opaque bevel
+      // lines.
       SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_BLEND);
       SDL_SetRenderDrawColor(r_, base.r, base.g, base.b, 200);
       SDL_RenderFillRect(r_, &rc);
@@ -377,34 +402,37 @@ void Render::drawGrid(const Map &map) {
 
   setCol(Pal::WallHi);
   fillRect(r_, 0, TOP_MARGIN + ROWS * TILE, WIN_W, 2); // bottom border
-  fillRect(r_, 0,         TOP_MARGIN, 2, ROWS * TILE); // left border
+  fillRect(r_, 0, TOP_MARGIN, 2, ROWS * TILE);         // left border
   fillRect(r_, WIN_W - 2, TOP_MARGIN, 2, ROWS * TILE); // right border
 }
 
 void Render::drawPaddle(const Paddle &p) {
   SDL_Rect rc = p.rect();
 
-  // Phase-shift ghost: two chromatic copies offset along the velocity vector.
-  // The offset scales with speed so it vanishes when the paddle is still.
   float vx = p.getVX(), vy = p.getVY();
   float speed = sqrtf(vx * vx + vy * vy);
   if (speed > 1.f) {
-    float norm = speed / PADDLE_X_SPEED; // 0..1 (diagonal slightly > 1)
+    // Normalise speed against the paddle's max so t ∈ [0,1] regardless of
+    // direction. Diagonal movement produces a slightly higher raw speed but
+    // the min() clamp keeps shift from overshooting.
+    float norm = speed / PADDLE_X_SPEED;
     float t = std::min(norm, 1.f);
-    int shift = (int)(t * 12.f); // max 12 px ghost separation
+    int shift = (int)(t * 12.f); // max 12 px separation between ghosts
 
+    // (nx, ny) is the unit direction of travel.
+    // The ghosts sit behind and ahead of the real paddle along that vector —
+    // same idea as lens chromatic aberration where different wavelengths focus
+    // at slightly different distances.
     float nx = vx / speed, ny = vy / speed;
     int ox = (int)(nx * shift), oy = (int)(ny * shift);
 
     SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_BLEND);
 
-    // Trailing ghost — warm pink, opposite to motion
-    SDL_Rect trail = {rc.x - ox, rc.y - oy, rc.w, rc.h};
+    SDL_Rect trail = {rc.x - ox, rc.y - oy, rc.w, rc.h}; // behind
     SDL_SetRenderDrawColor(r_, 255, 60, 160, (uint8_t)(t * 70.f));
     SDL_RenderFillRect(r_, &trail);
 
-    // Leading ghost — cool cyan, ahead of motion
-    SDL_Rect lead = {rc.x + ox, rc.y + oy, rc.w, rc.h};
+    SDL_Rect lead = {rc.x + ox, rc.y + oy, rc.w, rc.h}; // ahead
     SDL_SetRenderDrawColor(r_, 60, 220, 255, (uint8_t)(t * 50.f));
     SDL_RenderFillRect(r_, &lead);
 
