@@ -64,7 +64,7 @@ struct Col {
 };
 
 namespace Pal {
-constexpr Col Floor = {35, 30, 45};    // dark purple obsidian
+constexpr Col Floor = {0, 0, 0};    // dark purple obsidian
 constexpr Col WallBase = {45, 38, 58}; // slightly lifted obsidian for HUD bar
 constexpr Col WallHi = {200, 80, 140}; // vivid pink — divider line + HUD border
 constexpr Col WallShade = {80, 45, 80}; // muted mauve — empty-cell grid lines

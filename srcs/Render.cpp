@@ -182,11 +182,11 @@ void Render::setCol(Col c, uint8_t a) {
 
 void Render::drawScoreboard(int score, float totalTime, const Ball &b,
                             float reverserTimer) {
-  setCol(Pal::WallBase);
+  setCol(Pal::Outside);
   fillRect(r_, 0, 0, WIN_W, TOP_MARGIN);
 
   setCol(Pal::WallHi);
-  fillRect(r_, 0, TOP_MARGIN - 1, WIN_W, 1);
+  fillRect(r_, 0, TOP_MARGIN - 1, WIN_W, 2);
 
   if (!font_)
     return;
@@ -307,9 +307,6 @@ void Render::drawGrid(const Map &map) {
         SDL_SetRenderDrawColor(r_, Pal::Floor.r, Pal::Floor.g, Pal::Floor.b,
                                80);
         SDL_RenderFillRect(r_, &rc);
-        SDL_SetRenderDrawBlendMode(r_, SDL_BLENDMODE_NONE);
-        setCol(Pal::WallShade);
-        SDL_RenderDrawRect(r_, &rc);
         continue;
       }
 
@@ -379,7 +376,9 @@ void Render::drawGrid(const Map &map) {
   }
 
   setCol(Pal::WallHi);
-  fillRect(r_, 0, TOP_MARGIN + ROWS * TILE, WIN_W, 2);
+  fillRect(r_, 0, TOP_MARGIN + ROWS * TILE, WIN_W, 2); // bottom border
+  fillRect(r_, 0,         TOP_MARGIN, 2, ROWS * TILE); // left border
+  fillRect(r_, WIN_W - 2, TOP_MARGIN, 2, ROWS * TILE); // right border
 }
 
 void Render::drawPaddle(const Paddle &p) {
