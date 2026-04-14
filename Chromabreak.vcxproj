@@ -37,7 +37,8 @@
     <ClInclude Include="include\Render.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="context.txt" />
+    <None Include="LICENSE" />
+    <None Include="README.md" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

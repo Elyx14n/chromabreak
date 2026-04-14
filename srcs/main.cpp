@@ -31,7 +31,7 @@ int main(int, char *[]) {
     return 1;
   }
 
-  SDL_Window *w = SDL_CreateWindow("Chromabreak", SDL_WINDOWPOS_CENTERED,
+  SDL_Window *w = SDL_CreateWindow("ChromaBreak", SDL_WINDOWPOS_CENTERED,
                                    SDL_WINDOWPOS_CENTERED, WIN_W, WIN_H, 0);
   SDL_Renderer *r = SDL_CreateRenderer(
       w, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
