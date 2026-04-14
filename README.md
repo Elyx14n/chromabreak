@@ -87,7 +87,7 @@ flying below the game window.
 ### Brick Variants
 
 Upon destruction, a single brick rewards **100 points**. Normal, colored bricks
-***must be broken by a specific color*** while special bricks are breakable by ***any color***.
+**must be broken by a specific color** while special bricks are breakable by **any color**.
 
 - **Normal Brick** - Colored red through purple and only breakable by specific color.
 - **Bomb Brick (Special)** - Blows up all bricks within a 2x2 radius regardless of color.
