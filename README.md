@@ -92,7 +92,7 @@ Upon destruction, a single brick rewards **100 points**. Normal, colored bricks
 - **Normal Brick** - Colored red through purple and only breakable by specific color.
 - **Bomb Brick (Special)** - Blows up all bricks within a 2x2 radius regardless of color.
 - **Transformer Brick (Special)** - Transforms all bricks within a 4x4 radius to it's specific color.
-- **Rainbow Brick (Special)** - Temporarily grants the player an RGB hue-shifting rainbow ball that breaks any colored bricks.
+- **Rainbow Brick (Special)** - Temporarily grants the player a rainbow ball that breaks any colored bricks.
 - **Reverser Brick (Special)** - Temporarily reverses the direction of brick-shifting from top-bottom to bottom-up, destroying bricks pushed to the very top. Also prevents new bricks from spawning.
 
 
