@@ -281,6 +281,10 @@ void Render::drawVisualizer(const Audio &audio) {
     // on the next segment's sY. Computing sY and sH independently would floor
     // them separately and leave 1-px gaps at every transition.
     for (int seg = 0; seg < kSegs; seg++) {
+			// t0 - segment start / bar height (0.0 = bot, 1.0 = top)
+			// t1 - segment end
+			// tMid - midpoint for sampling color
+			// cumulative fractional gradient filled segments form the vis bar
       float t0 = (float)seg / kSegs;
       float t1 = (float)(seg + 1) / kSegs;
       float tMid = (t0 + t1) * 0.5f;

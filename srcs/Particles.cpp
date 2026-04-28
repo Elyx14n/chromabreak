@@ -112,6 +112,9 @@ static void glowOrb(SDL_Renderer *r, int cx, int cy, int rad, uint8_t cr,
       return;
     SDL_SetRenderDrawColor(r, cr, cg, cb, a);
     for (int dy = -radius; dy <= radius; dy++) {
+			// dx² + dy² = radius² 
+			// dx² = radius² - dy²                                                                                                                                                                                                                 dx² = radius² - dy²
+      // dx = √(radius² - dy²)
       int dx = (int)sqrtf((float)(radius * radius - dy * dy));
       SDL_RenderDrawLine(r, cx - dx, cy + dy, cx + dx, cy + dy);
     }

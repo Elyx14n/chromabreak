@@ -195,6 +195,10 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
 
     // Keep |v| constant: vy = √(speed² − vx²). The minVy floor prevents a
     // near-horizontal shot that takes forever to reach the brick field.
+		// vx2 + vy2 = BALL_SPEED^2 (fixed total speed)
+		// rebalance equation to solve for vy2
+		// use vy2 to solve for vy, picking root of either vy2 if its large enough
+		// or minvy2, which is used to shoot ball upwards
     float minVy = BALL_SPEED * 0.35f;
     float vy2 = BALL_SPEED * BALL_SPEED - vx_ * vx_;
     vy_ = -sqrtf(vy2 > minVy * minVy ? vy2 : minVy * minVy);
@@ -221,7 +225,6 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
       float cy = cell.y + cell.h * 0.5f;
       Col brickCol = BrickPal::Colors[static_cast<int>(bc)];
 
-      bool brickDestroyed = true;
       if (bc != BrickColor::EMPTY)
         audio.playSound(SFXLib::BallRebound);
 
@@ -244,20 +247,14 @@ void Ball::update(float dt, const Paddle &paddle, Map &map, int &score,
       } else if (bt == BrickType::REVERSER) {
         audio.playSound(SFXLib::Reverser);
         map.reverserEffect(r, c, score, ps);
-
-      } else {
-        bool colorMatch = (bc == color_) || (power_ == BallPower::RAINBOW);
-        if (colorMatch) {
-          int gained = map.floodFill(r, c, bc, score, ps);
-          audio.playRandomBreakSingle();
-          if (gained > BASE_SCORE * 3)
-            audio.playRandomBreakMultiple();
-        } else {
-          brickDestroyed = false;
-        }
       }
 
-      (void)brickDestroyed;
+      if ((bc == color_) || (power_ == BallPower::RAINBOW)) {
+        int gained = map.floodFill(r, c, bc, score, ps);
+        audio.playRandomBreakSingle();
+        if (gained > BASE_SCORE * 3)
+          audio.playRandomBreakMultiple();
+      }
 
       // Minimum-penetration response: ox and oy are the overlap depths on each
       // axis. The smaller axis is the one the ball entered through, so that's
