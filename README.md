@@ -23,7 +23,7 @@ signal processing and procedurally generated game entities.
 ### Key Features
 
 - **Real-time Audio Visualization** - Uses Goertzel's algorithm and RMS for efficient digital signal processing, and smooth frequency-domain transformations.
-- **Color-matching Brick Destruction** - Dynamic destruction of adjacent color-grouped bricks using a BFS floodfill for a Candy Crush / Tetris-like experience.
+- **Color-matching Brick Destruction** - Dynamic destruction of adjacent color-grouped bricks using a DFS floodfill for a Candy Crush / Tetris-like experience.
 - **Custom Visual FX System** - In-house Particle and Rendering System that manages the lifetime and drawing of individual particle effects and sprites.
 - **Procedurally Generated Map** - Fine-tuned randomized generation of brick variants and intelligent row-spawning with selective vertical shifting of contiguous brick segments.
 - **Self-made Music** - 2/3 soundtracks (Forsaken One and Neon Twillight) were composed by me, [check them out on SoundCloud](https://on.soundcloud.com/9b8rrfLvJLcgtKwdrL)!
