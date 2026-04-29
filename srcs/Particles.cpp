@@ -169,7 +169,7 @@ static void glowRing(SDL_Renderer *r, int cx, int cy, int radius, uint8_t cr,
       SDL_RenderDrawPoint(r, cx + x, cy - y);
       SDL_RenderDrawPoint(r, cx + y, cy - x);
       SDL_RenderDrawPoint(r, cx - x, cy - y);
-      SDL_RenderDrawPoint(r, cx - y, cy - x);
+      SDL_RenderDrawPoint(r, cx - y, cy - x); 
 
       y++;  // always climb the octant by one row
       // err tracks deviation from the true circle x²+y²=r².

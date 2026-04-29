@@ -227,6 +227,8 @@ void Audio::postMixCallback(void *udata, Uint8 *stream, int len) {
 
   // Convert Sint16 stereo to float mono
   const Sint16 *src = reinterpret_cast<const Sint16 *>(stream);
+	// [L0][R0][L1][R1][L2][R2]...
+	// Each Sint16 is 2 bytes, each frame is 2 of them = 4 bytes total.
   int frames = len / (2 * (int)sizeof(Sint16)); // stereo frames
   int count = std::min(frames, 2048);
 
