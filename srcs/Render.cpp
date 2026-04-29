@@ -184,7 +184,7 @@ Render::Render(SDL_Renderer *r) : r_(r), font_(nullptr) {
     SDL_Log("TTF_OpenFont failed: %s", TTF_GetError());
 }
 
-Render::~Render() { TTF_CloseFont(font_); }
+Render::~Render() { if (font_) TTF_CloseFont(font_); }
 
 void Render::setCol(Col c, uint8_t a) {
   SDL_SetRenderDrawColor(r_, c.r, c.g, c.b, a);

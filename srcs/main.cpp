@@ -36,83 +36,86 @@ int main(int, char *[]) {
   SDL_Renderer *r = SDL_CreateRenderer(
       w, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
-  Render render(r);
+  {
+    Render render(r);
 
-  Map map;
-  Paddle paddle;
-  Ball ball;
-  ParticleSystem particles;
-  int score = 0;
-  bool gameOver = false;
-  GameState state = GameState::PLAYING;
+    Map map;
+    Paddle paddle;
+    Ball ball;
+    ParticleSystem particles;
+    int score = 0;
+    bool gameOver = false;
+    GameState state = GameState::PLAYING;
 
-  map.init();
+    map.init();
 
-  Uint64 prev = SDL_GetTicks64();
-  bool running = true;
-  SDL_Event event;
+    Uint64 prev = SDL_GetTicks64();
+    bool running = true;
+    SDL_Event event;
 
-  while (running) {
-    Uint64 now = SDL_GetTicks64();
-    float dt = (now - prev) / 1000.f;
-    prev = now;
-    dt = std::min(dt, 0.05f);
+    while (running) {
+      Uint64 now = SDL_GetTicks64();
+      float dt = (now - prev) / 1000.f;
+      prev = now;
+      dt = std::min(dt, 0.05f);
 
-    const uint8_t *keys = SDL_GetKeyboardState(nullptr);
+      const uint8_t *keys = SDL_GetKeyboardState(nullptr);
 
-    while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_QUIT)
-        running = false;
+      while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT)
+          running = false;
 
-      if (event.type == SDL_KEYDOWN) {
-        if (state == GameState::PLAYING)
-          ball.handleColor(event.key.keysym.sym, audio);
-        if (state == GameState::GAME_OVER && event.key.keysym.sym == SDLK_r) {
-          map.init();
-          paddle = Paddle();
-          ball = Ball();
-          particles.reset();
-          score = 0;
-          gameOver = false;
-          state = GameState::PLAYING;
-          audio.playSound(SFXLib::Menu);
-          audio.shuffle = true;
+        if (event.type == SDL_KEYDOWN) {
+          if (state == GameState::PLAYING)
+            ball.handleColor(event.key.keysym.sym, audio);
+          if (state == GameState::GAME_OVER && event.key.keysym.sym == SDLK_r) {
+            map.init();
+            paddle = Paddle();
+            ball = Ball();
+            particles.reset();
+            score = 0;
+            gameOver = false;
+            state = GameState::PLAYING;
+            audio.playSound(SFXLib::Menu);
+            audio.shuffle = true;
+          }
         }
       }
+
+      if (state == GameState::PLAYING) {
+        paddle.update(dt, keys);
+        ball.update(dt, paddle, map, score, gameOver, particles, audio);
+        map.update(dt, gameOver, score, particles, audio);
+        particles.update(dt);
+        if (audio.shuffle && Mix_PlayingMusic() == 0)
+          audio.playRandomMusic();
+        if (gameOver) {
+          audio.playSound(SFXLib::Menu);
+          audio.stopMusic();
+          state = GameState::GAME_OVER;
+        }
+      }
+      audio.updateVisBands(dt);
+
+      SDL_SetRenderDrawColor(r, Pal::Outside.r, Pal::Outside.g, Pal::Outside.b,
+                             255);
+      SDL_RenderClear(r);
+
+      render.drawVisualizer(audio);
+      render.drawGrid(map);
+      render.drawParticles(particles);
+      render.drawPaddle(paddle);
+      render.drawBall(ball, map.getTotalTime());
+      render.drawScoreboard(score, map.getTotalTime(), ball,
+                            map.getReverserTimer());
+
+      if (state == GameState::GAME_OVER)
+        render.drawGameOver();
+
+      SDL_RenderPresent(r);
     }
 
-    if (state == GameState::PLAYING) {
-      paddle.update(dt, keys);
-      ball.update(dt, paddle, map, score, gameOver, particles, audio);
-      map.update(dt, gameOver, score, particles, audio);
-      particles.update(dt);
-      if (audio.shuffle && Mix_PlayingMusic() == 0)
-        audio.playRandomMusic();
-      if (gameOver) {
-        audio.playSound(SFXLib::Menu);
-        audio.stopMusic();
-        state = GameState::GAME_OVER;
-			}
-    }
-    audio.updateVisBands(dt);
-
-    SDL_SetRenderDrawColor(r, Pal::Outside.r, Pal::Outside.g, Pal::Outside.b,
-                           255);
-    SDL_RenderClear(r);
-
-    render.drawVisualizer(audio);
-    render.drawGrid(map);
-    render.drawParticles(particles);
-    render.drawPaddle(paddle);
-    render.drawBall(ball, map.getTotalTime());
-    render.drawScoreboard(score, map.getTotalTime(), ball,
-                          map.getReverserTimer());
-
-    if (state == GameState::GAME_OVER)
-      render.drawGameOver();
-
-    SDL_RenderPresent(r);
-  }
+  } // ~Render() fires here, TTF_CloseFont called while SDL_ttf is still alive
 
   TTF_Quit();
   SDL_DestroyRenderer(r);
